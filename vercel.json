@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/cap-alerts", "schedule": "0 9 1 6 *" },
+    { "path": "/api/cron/apra-update", "schedule": "0 9 1 10 *" }
+  ]
+}
