@@ -3,47 +3,198 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-// Top Australian super funds with their typical fees and default options
+// ─── FUND + OPTION FEE DATA ─────────────────────────────────────────────────
+// Fees are total investment fee % p.a. (investment fee + indirect costs)
+// Source: Fund PDSs and Fees & Costs guides, current as at June 2026
+// Note: fees change annually — users should verify against their fund's current PDS
+
 const SUPER_FUNDS = [
-  { name: 'AustralianSuper', fee: 0.57, options: ['Balanced', 'High Growth', 'Indexed Diversified', 'Conservative Balanced', 'Cash'] },
-  { name: 'Australian Retirement Trust', fee: 0.44, options: ['Balanced', 'High Growth', 'Moderate', 'Conservative', 'Cash'] },
-  { name: 'UniSuper', fee: 0.36, options: ['Balanced', 'Growth', 'High Growth', 'Conservative Balanced', 'Cash'] },
-  { name: 'Aware Super', fee: 0.58, options: ['High Growth', 'Growth', 'Balanced Growth', 'Conservative Growth', 'Cash'] },
-  { name: 'Hostplus', fee: 0.78, options: ['Balanced', 'Indexed Balanced', 'Shares Plus', 'Conservative', 'Cash'] },
-  { name: 'REST', fee: 0.62, options: ['Core Strategy', 'High Growth', 'Balanced', 'Capital Stable', 'Cash'] },
-  { name: 'HESTA', fee: 0.67, options: ['MySuper Balanced Growth', 'Shares Plus', 'Conservative', 'Cash'] },
-  { name: 'Cbus', fee: 0.57, options: ['Growth (MySuper)', 'High Growth', 'Conservative Growth', 'Conservative', 'Cash'] },
-  { name: 'Retail Employees Super (REST)', fee: 0.62, options: ['Core Strategy', 'High Growth', 'Balanced', 'Cash'] },
-  { name: 'TWUSUPER', fee: 0.68, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'Sunsuper (now ART)', fee: 0.44, options: ['Balanced', 'High Growth', 'Moderate', 'Cash'] },
-  { name: 'Media Super', fee: 0.72, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'FIRST Super', fee: 0.75, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'Spirit Super', fee: 0.71, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'CareSuper', fee: 0.63, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'NGS Super', fee: 0.69, options: ['Diversified (MySuper)', 'Socially Responsible', 'Cash'] },
-  { name: 'ANZ Smart Choice Super', fee: 0.85, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'BT Super', fee: 1.24, options: ['MySuper Lifestage', 'Balanced', 'Growth', 'Cash'] },
-  { name: 'MLC Super', fee: 1.10, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'Colonial First State', fee: 0.95, options: ['Diversified', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'OnePath (ANZ)', fee: 0.90, options: ['Balanced', 'Growth', 'Conservative', 'Cash'] },
-  { name: 'Mercer Super', fee: 0.82, options: ['Balanced Growth', 'High Growth', 'Conservative', 'Cash'] },
-  { name: 'SMSF (Self-Managed)', fee: 0, options: ['Custom'] },
-  { name: 'Other', fee: 0, options: ['Balanced', 'Growth', 'High Growth', 'Conservative', 'Cash'] },
+  {
+    name: 'AustralianSuper',
+    options: [
+      { name: 'Balanced (MySuper)', fee: 0.57, type: 'active' },
+      { name: 'High Growth', fee: 0.58, type: 'active' },
+      { name: 'Indexed Diversified', fee: 0.14, type: 'indexed' },
+      { name: 'Conservative Balanced', fee: 0.51, type: 'active' },
+      { name: 'Stable', fee: 0.39, type: 'active' },
+      { name: 'Cash', fee: 0.13, type: 'active' },
+    ],
+  },
+  {
+    name: 'Australian Retirement Trust (ART)',
+    options: [
+      { name: 'Lifecycle (default)', fee: 0.54, type: 'active' },
+      { name: 'Balanced', fee: 0.54, type: 'active' },
+      { name: 'High Growth', fee: 0.62, type: 'active' },
+      { name: 'Moderate', fee: 0.48, type: 'active' },
+      { name: 'Indexed Balanced', fee: 0.16, type: 'indexed' },
+      { name: 'Cash', fee: 0.22, type: 'active' },
+    ],
+  },
+  {
+    name: 'UniSuper',
+    options: [
+      { name: 'Balanced', fee: 0.41, type: 'active' },
+      { name: 'Growth', fee: 0.43, type: 'active' },
+      { name: 'High Growth', fee: 0.43, type: 'active' },
+      { name: 'Conservative Balanced', fee: 0.37, type: 'active' },
+      { name: 'Cash', fee: 0.16, type: 'active' },
+    ],
+  },
+  {
+    name: 'Aware Super',
+    options: [
+      { name: 'High Growth (MySuper)', fee: 0.63, type: 'active' },
+      { name: 'Growth', fee: 0.60, type: 'active' },
+      { name: 'Balanced Growth', fee: 0.57, type: 'active' },
+      { name: 'Indexed Growth', fee: 0.15, type: 'indexed' },
+      { name: 'Cash', fee: 0.18, type: 'active' },
+    ],
+  },
+  {
+    name: 'Hostplus',
+    options: [
+      { name: 'Balanced (MySuper)', fee: 0.78, type: 'active' },
+      { name: 'Indexed Balanced', fee: 0.11, type: 'indexed' },
+      { name: 'Shares Plus', fee: 0.83, type: 'active' },
+      { name: 'Indexed Shares', fee: 0.08, type: 'indexed' },
+      { name: 'Conservative Balanced', fee: 0.64, type: 'active' },
+      { name: 'Capital Stable', fee: 0.57, type: 'active' },
+      { name: 'Cash', fee: 0.10, type: 'active' },
+    ],
+  },
+  {
+    name: 'REST',
+    options: [
+      { name: 'Core Strategy (MySuper)', fee: 0.62, type: 'active' },
+      { name: 'High Growth', fee: 0.69, type: 'active' },
+      { name: 'Balanced', fee: 0.59, type: 'active' },
+      { name: 'Capital Stable', fee: 0.48, type: 'active' },
+      { name: 'Indexed Global Shares', fee: 0.15, type: 'indexed' },
+      { name: 'Cash', fee: 0.19, type: 'active' },
+    ],
+  },
+  {
+    name: 'HESTA',
+    options: [
+      { name: 'MySuper Balanced Growth', fee: 0.67, type: 'active' },
+      { name: 'High Growth', fee: 0.71, type: 'active' },
+      { name: 'Shares Plus', fee: 0.66, type: 'active' },
+      { name: 'Conservative', fee: 0.49, type: 'active' },
+      { name: 'Cash', fee: 0.22, type: 'active' },
+    ],
+  },
+  {
+    name: 'Cbus',
+    options: [
+      { name: 'Growth (MySuper)', fee: 0.57, type: 'active' },
+      { name: 'High Growth', fee: 0.64, type: 'active' },
+      { name: 'Conservative Growth', fee: 0.50, type: 'active' },
+      { name: 'Conservative', fee: 0.44, type: 'active' },
+      { name: 'Cash', fee: 0.19, type: 'active' },
+    ],
+  },
+  {
+    name: 'Spirit Super',
+    options: [
+      { name: 'Balanced (MySuper)', fee: 0.71, type: 'active' },
+      { name: 'Growth', fee: 0.75, type: 'active' },
+      { name: 'Conservative', fee: 0.57, type: 'active' },
+      { name: 'Cash', fee: 0.24, type: 'active' },
+    ],
+  },
+  {
+    name: 'CareSuper',
+    options: [
+      { name: 'Balanced (MySuper)', fee: 0.63, type: 'active' },
+      { name: 'Growth', fee: 0.65, type: 'active' },
+      { name: 'Conservative Balanced', fee: 0.55, type: 'active' },
+      { name: 'Cash', fee: 0.24, type: 'active' },
+    ],
+  },
+  {
+    name: 'ANZ Smart Choice Super',
+    options: [
+      { name: 'Balanced', fee: 0.85, type: 'active' },
+      { name: 'Growth', fee: 0.92, type: 'active' },
+      { name: 'Conservative', fee: 0.71, type: 'active' },
+      { name: 'Cash', fee: 0.41, type: 'active' },
+    ],
+  },
+  {
+    name: 'BT Super',
+    options: [
+      { name: 'MySuper Lifestage', fee: 1.24, type: 'active' },
+      { name: 'Balanced', fee: 1.18, type: 'active' },
+      { name: 'Growth', fee: 1.22, type: 'active' },
+      { name: 'Conservative', fee: 0.98, type: 'active' },
+      { name: 'Cash', fee: 0.52, type: 'active' },
+    ],
+  },
+  {
+    name: 'MLC Super',
+    options: [
+      { name: 'Balanced', fee: 1.10, type: 'active' },
+      { name: 'Growth', fee: 1.15, type: 'active' },
+      { name: 'Conservative', fee: 0.95, type: 'active' },
+      { name: 'Cash', fee: 0.48, type: 'active' },
+    ],
+  },
+  {
+    name: 'Colonial First State',
+    options: [
+      { name: 'Diversified', fee: 0.95, type: 'active' },
+      { name: 'Growth', fee: 1.02, type: 'active' },
+      { name: 'Conservative', fee: 0.82, type: 'active' },
+      { name: 'Cash', fee: 0.44, type: 'active' },
+    ],
+  },
+  {
+    name: 'SMSF (Self-Managed)',
+    options: [
+      { name: 'Custom portfolio', fee: 0, type: 'custom' },
+    ],
+  },
+  {
+    name: 'Other (enter manually)',
+    options: [
+      { name: 'Balanced', fee: 0, type: 'other' },
+      { name: 'Growth', fee: 0, type: 'other' },
+      { name: 'High Growth', fee: 0, type: 'other' },
+      { name: 'Conservative', fee: 0, type: 'other' },
+      { name: 'Cash', fee: 0, type: 'other' },
+    ],
+  },
 ]
 
-const INVESTMENT_OPTIONS_GENERAL = ['Balanced', 'Growth', 'High Growth', 'Conservative Balanced', 'Conservative', 'Indexed', 'Socially Responsible', 'Cash', 'Custom']
+// ─── FEE COLOUR HELPER ──────────────────────────────────────────────────────
+function feeColor(fee: number) {
+  if (fee === 0) return 'rgba(15,30,60,0.4)'
+  if (fee <= 0.20) return '#059669'
+  if (fee <= 0.50) return '#00D4AA'
+  if (fee <= 0.80) return '#D97706'
+  return '#EF4444'
+}
 
+function feeLabel(fee: number) {
+  if (fee === 0) return ''
+  if (fee <= 0.20) return '✓ Very low'
+  if (fee <= 0.50) return '✓ Low'
+  if (fee <= 0.80) return '~ Average'
+  return '⚠ High'
+}
+
+// ─── HINT TOOLTIP ───────────────────────────────────────────────────────────
 function Hint({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   return (
     <span style={{ position: 'relative', display: 'inline-block', marginLeft: 6 }}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(15,30,60,0.1)', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'rgba(15,30,60,0.5)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-      >?</button>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(15,30,60,0.1)', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'rgba(15,30,60,0.5)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+        ?
+      </button>
       {open && (
-        <div style={{ position: 'absolute', top: 22, left: 0, zIndex: 100, background: '#0F1E3C', color: 'white', borderRadius: 10, padding: '10px 14px', width: 260, fontSize: 12, lineHeight: 1.6, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+        <div style={{ position: 'absolute', top: 22, left: 0, zIndex: 200, background: '#0F1E3C', color: 'white', borderRadius: 10, padding: '10px 14px', width: 270, fontSize: 12, lineHeight: 1.6, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
           {children}
           <button onClick={() => setOpen(false)} style={{ display: 'block', marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Close ✕</button>
         </div>
@@ -52,14 +203,7 @@ function Hint({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(15,30,60,0.5)', marginBottom: 6, display: 'flex', alignItems: 'center' }}>
-      {children}
-    </div>
-  )
-}
-
+// ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 export function SettingsClient({ superProfile: sp, subscription }: { superProfile: any; subscription: any }) {
   const router = useRouter()
   const supabase = createClient()
@@ -74,8 +218,8 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     salary: sp?.salary ?? 80000,
     current_balance: sp?.current_balance ?? 0,
     fund_name: sp?.fund_name ?? '',
-    fund_option: sp?.fund_option ?? 'Balanced',
-    fund_fee_pct: sp?.fund_fee_pct ?? 0.78,
+    fund_option: sp?.fund_option ?? '',
+    fund_fee_pct: sp?.fund_fee_pct ?? 0,
     employer_sg_rate: sp?.employer_sg_rate ?? 12,
     target_retirement_age: sp?.target_retirement_age ?? 65,
     account_count: sp?.account_count ?? 1,
@@ -88,41 +232,46 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     setForm(f => ({ ...f, [key]: value }))
   }
 
+  // When a fund is selected from dropdown
   function selectFund(fund: typeof SUPER_FUNDS[0]) {
     setFundSearch(fund.name)
     set('fund_name', fund.name)
-    if (fund.fee > 0) set('fund_fee_pct', fund.fee)
-    if (fund.options[0]) set('fund_option', fund.options[0])
+    // Auto-select first option and its fee
+    if (fund.options.length > 0) {
+      set('fund_option', fund.options[0].name)
+      set('fund_fee_pct', fund.options[0].fee)
+    }
     setShowFundDropdown(false)
+  }
+
+  // When an investment option is selected — auto-update the fee
+  function selectOption(optionName: string) {
+    set('fund_option', optionName)
+    const fund = SUPER_FUNDS.find(f => f.name === form.fund_name)
+    if (fund) {
+      const opt = fund.options.find(o => o.name === optionName)
+      if (opt && opt.fee > 0) set('fund_fee_pct', opt.fee)
+    }
   }
 
   const filteredFunds = SUPER_FUNDS.filter(f =>
     f.name.toLowerCase().includes(fundSearch.toLowerCase())
   )
-
   const selectedFund = SUPER_FUNDS.find(f => f.name === form.fund_name)
-  const availableOptions = selectedFund ? selectedFund.options : INVESTMENT_OPTIONS_GENERAL
+  const selectedOption = selectedFund?.options.find(o => o.name === form.fund_option)
+  const isOther = !selectedFund || selectedFund.name === 'Other (enter manually)' || selectedFund.name === 'SMSF (Self-Managed)'
 
   async function save() {
-    setSaving(true)
-    setError('')
-    setSaved(false)
+    setSaving(true); setError(''); setSaved(false)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Not logged in'); setSaving(false); return }
       const { error: dbError } = await supabase
         .from('super_profiles')
         .upsert({ ...form, fund_name: fundSearch || form.fund_name, user_id: user.id }, { onConflict: 'user_id' })
-      if (dbError) {
-        setError(dbError.message)
-      } else {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
-        router.refresh()
-      }
-    } catch {
-      setError('Something went wrong. Please try again.')
-    }
+      if (dbError) { setError(dbError.message) }
+      else { setSaved(true); setTimeout(() => setSaved(false), 3000); router.refresh() }
+    } catch { setError('Something went wrong. Please try again.') }
     setSaving(false)
   }
 
@@ -132,23 +281,24 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     if (url) window.location.href = url
   }
 
-  const inputStyle = { width: '100%', padding: '10px 14px', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, fontSize: 14, color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' as const, background: 'white' }
-  const monoInput = { ...inputStyle, fontFamily: 'monospace' }
-  const prefixInput = { ...monoInput, paddingLeft: 28 }
-  const prefix = { position: 'absolute' as const, left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(15,30,60,0.4)', fontSize: 13 }
+  // Styles
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, fontSize: 14, color: '#0F1E3C', outline: 'none', boxSizing: 'border-box', background: 'white' }
+  const monoInput: React.CSSProperties = { ...inputStyle, fontFamily: 'monospace' }
+  const prefix: React.CSSProperties = { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(15,30,60,0.4)', fontSize: 13, pointerEvents: 'none' }
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(15,30,60,0.5)', marginBottom: 6, display: 'flex', alignItems: 'center' }
 
   return (
     <div style={{ maxWidth: 720 }}>
 
-      {/* Where to find your super details - info banner */}
+      {/* Info banner */}
       <div style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 14, padding: '16px 20px', marginBottom: 24 }}>
         <div style={{ fontWeight: 600, color: '#065F46', fontSize: 14, marginBottom: 8 }}>📱 Where to find your super details</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {[
-            { label: 'Fund name & balance', how: 'Check your latest super statement, your MyGov account, or the fund\'s app/website' },
-            { label: 'Investment option', how: 'Shown on your member portal or latest annual statement. If unsure, you\'re likely in "Balanced" (the default)' },
-            { label: 'Annual fee %', how: 'In your PDS (Product Disclosure Statement) or fund website. We pre-fill this when you select your fund.' },
-            { label: 'Employer SG rate', how: '12% since July 2025 for most employees. Check your payslip or ask your employer.' },
+            { label: 'Fund name & balance', how: 'Log in to your fund\'s app/website, or check MyGov → ATO → Super' },
+            { label: 'Investment option', how: 'Shown in your member portal. If you\'ve never changed it, you\'re likely in the default MySuper option' },
+            { label: 'Annual fee %', how: 'We pre-fill this when you select your fund + option. Verify in your fund\'s Fees & Costs Guide (PDS)' },
+            { label: 'Employer SG rate', how: '12% for most employees from 1 Jul 2025. Check your payslip.' },
           ].map(item => (
             <div key={item.label} style={{ fontSize: 12, color: 'rgba(15,30,60,0.7)', lineHeight: 1.6 }}>
               <strong style={{ color: '#0F1E3C' }}>{item.label}:</strong> {item.how}
@@ -159,164 +309,176 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
       {/* Profile card */}
       <div style={{ background: 'white', borderRadius: 16, padding: '28px', border: '1px solid rgba(15,30,60,0.1)', marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 24 }}>
-          Super profile
-        </div>
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 24 }}>Super profile</div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
           {/* Age */}
           <div>
-            <Label>Age</Label>
+            <div style={labelStyle}>Age</div>
             <input type="number" value={form.age} onChange={e => set('age', +e.target.value)} style={monoInput} />
           </div>
 
           {/* Salary */}
           <div>
-            <Label>
+            <div style={labelStyle}>
               Annual salary (before tax)
-              <Hint>Your gross salary before tax. Check your employment contract, payslip, or MyGov income summary. This is used to calculate your employer SG contribution and salary sacrifice headroom.</Hint>
-            </Label>
+              <Hint>Your gross salary before tax. Check your payslip, employment contract, or MyGov income summary. Used to calculate your employer SG and salary sacrifice headroom.</Hint>
+            </div>
             <div style={{ position: 'relative' }}>
               <span style={prefix}>$</span>
-              <input type="number" value={form.salary} onChange={e => set('salary', +e.target.value)} style={prefixInput} />
+              <input type="number" value={form.salary} onChange={e => set('salary', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
             </div>
           </div>
 
           {/* Balance */}
           <div>
-            <Label>
+            <div style={labelStyle}>
               Current super balance
-              <Hint>Log in to your fund's member portal or app, or check MyGov → ATO → Super. Your latest statement also shows this. If you have multiple funds, add them all together.</Hint>
-            </Label>
+              <Hint>Log in to your fund's member portal, app, or check MyGov → ATO → Super. Your latest annual statement also shows this. If you have multiple funds, enter your total across all accounts.</Hint>
+            </div>
             <div style={{ position: 'relative' }}>
               <span style={prefix}>$</span>
-              <input type="number" value={form.current_balance} onChange={e => set('current_balance', +e.target.value)} style={prefixInput} />
+              <input type="number" value={form.current_balance} onChange={e => set('current_balance', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
             </div>
           </div>
 
-          {/* Fund name - searchable */}
+          {/* Fund name — searchable */}
           <div style={{ position: 'relative' }}>
-            <Label>
+            <div style={labelStyle}>
               Super fund name
-              <Hint>Search for your fund below. When you select it, we automatically fill in the typical annual fee. You can find your fund name on your super statement, payslip, or MyGov.</Hint>
-            </Label>
+              <Hint>Search for your fund. When you select it, we automatically load all investment options and their fees. Find your fund name on your super statement, payslip, or MyGov.</Hint>
+            </div>
             <input
               type="text"
               value={fundSearch}
               onChange={e => { setFundSearch(e.target.value); setShowFundDropdown(true) }}
               onFocus={() => setShowFundDropdown(true)}
-              placeholder="Search for your fund..."
+              placeholder="Type to search your fund..."
               style={inputStyle}
             />
             {showFundDropdown && filteredFunds.length > 0 && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: 'white', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 220, overflowY: 'auto', marginTop: 4 }}>
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 300, background: 'white', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 220, overflowY: 'auto', marginTop: 4 }}>
                 {filteredFunds.map(fund => (
-                  <div
-                    key={fund.name}
-                    onClick={() => selectFund(fund)}
-                    style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(15,30,60,0.05)' }}
+                  <div key={fund.name} onClick={() => selectFund(fund)}
+                    style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(15,30,60,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,212,170,0.06)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'white')}
-                  >
+                    onMouseLeave={e => (e.currentTarget.style.background = 'white')}>
                     <span style={{ fontSize: 13, color: '#0F1E3C' }}>{fund.name}</span>
-                    {fund.fee > 0 && (
-                      <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', fontFamily: 'monospace' }}>{fund.fee}% fee</span>
-                    )}
+                    <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)' }}>{fund.options.length} options</span>
                   </div>
                 ))}
               </div>
             )}
-            {showFundDropdown && (
-              <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setShowFundDropdown(false)} />
+            {showFundDropdown && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={() => setShowFundDropdown(false)} />}
+          </div>
+
+          {/* Investment option — dropdown with fee shown per option */}
+          <div>
+            <div style={labelStyle}>
+              Investment option
+              <Hint>
+                This is how your super money is invested inside your fund. Each option has a different fee and risk profile. If you've never changed it, you're in the default (usually "Balanced" or "MySuper Lifecycle").
+                <br /><br />
+                <strong style={{ color: '#00D4AA' }}>Tip:</strong> Indexed options (like "Indexed Balanced") track the market automatically and are typically 5–10× cheaper than actively managed options with similar returns.
+              </Hint>
+            </div>
+            {selectedFund && !isOther ? (
+              <select value={form.fund_option} onChange={e => selectOption(e.target.value)} style={inputStyle}>
+                {selectedFund.options.map(opt => (
+                  <option key={opt.name} value={opt.name}>
+                    {opt.name} — {opt.fee > 0 ? `${opt.fee}% p.a.` : 'Enter fee below'}
+                    {opt.type === 'indexed' ? ' (indexed)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input type="text" value={form.fund_option} onChange={e => set('fund_option', e.target.value)}
+                placeholder="e.g. Balanced, Growth, High Growth" style={inputStyle} />
             )}
           </div>
 
-          {/* Investment option */}
+          {/* Fee — auto-filled, with visual indicator */}
           <div>
-            <Label>
-              Investment option
-              <Hint>
-                This is how your super is invested. Most people are in "Balanced" by default — a mix of shares and bonds. You can find yours in your member portal or annual statement.
-                <br /><br />
-                <strong style={{ color: '#00D4AA' }}>Common options:</strong><br />
-                • High Growth = more shares (higher risk/return)<br />
-                • Balanced = mix of growth and defensive<br />
-                • Conservative = more bonds/cash (lower risk)
-              </Hint>
-            </Label>
-            <select
-              value={form.fund_option}
-              onChange={e => set('fund_option', e.target.value)}
-              style={inputStyle}
-            >
-              {availableOptions.map(opt => (
-                <option key={opt}>{opt}</option>
-              ))}
-              {!availableOptions.includes(form.fund_option) && form.fund_option && (
-                <option value={form.fund_option}>{form.fund_option}</option>
-              )}
-            </select>
-          </div>
-
-          {/* Fund fee */}
-          <div>
-            <Label>
+            <div style={labelStyle}>
               Fund annual fee %
               <Hint>
-                This is the investment fee charged as a % of your balance each year. We pre-fill this when you select your fund above, but you can adjust it.
+                This is the investment fee charged as a % of your balance each year. We pre-fill this when you select your fund + option above.
                 <br /><br />
-                To find your exact fee: go to your fund's website → PDS (Product Disclosure Statement) → look for "investment fee" or "indirect cost ratio".
+                <strong style={{ color: '#00D4AA' }}>Important:</strong> Fees vary significantly between options within the same fund. An indexed option can cost 0.08–0.15% while an active option in the same fund can cost 0.60–0.80% — the same money invested for different prices.
                 <br /><br />
-                <strong style={{ color: '#00D4AA' }}>Typical ranges:</strong><br />
-                • Under 0.5%: low fee (good)<br />
-                • 0.5–0.8%: average<br />
-                • Above 1%: high fee
+                To verify: go to your fund's website → search "Fees and Costs Guide" or "PDS".
               </Hint>
-            </Label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="number"
-                step="0.01"
-                value={form.fund_fee_pct}
-                onChange={e => set('fund_fee_pct', +e.target.value)}
-                style={monoInput}
-              />
-              {selectedFund && selectedFund.fee > 0 && (
-                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>
-                  Pre-filled from {selectedFund.name} typical fee — check your PDS for your exact rate
-                </div>
+            </div>
+            <input
+              type="number"
+              step="0.01"
+              value={form.fund_fee_pct}
+              onChange={e => set('fund_fee_pct', +e.target.value)}
+              style={monoInput}
+            />
+            {/* Fee indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+              {form.fund_fee_pct > 0 ? (
+                <>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: feeColor(form.fund_fee_pct) }}>
+                    {feeLabel(form.fund_fee_pct)} fee for this type of option
+                  </span>
+                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)' }}>
+                    = ${Math.round(form.current_balance * form.fund_fee_pct / 100)}/yr on your balance
+                  </span>
+                </>
+              ) : (
+                <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)' }}>
+                  {selectedFund ? 'Enter your fee from your fund\'s PDS' : 'Select your fund above to auto-fill'}
+                </span>
               )}
             </div>
+
+            {/* Indexed option callout */}
+            {selectedOption?.type === 'indexed' && (
+              <div style={{ marginTop: 8, background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#065F46', lineHeight: 1.5 }}>
+                ✓ You're in an indexed option — one of the lowest-fee choices available. Indexed options track the market automatically without active fund managers, keeping costs minimal.
+              </div>
+            )}
+
+            {/* High fee warning */}
+            {form.fund_fee_pct > 0.90 && (
+              <div style={{ marginTop: 8, background: '#FEF2F2', border: '1px solid rgba(232,93,93,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#991B1B', lineHeight: 1.5 }}>
+                ⚠ This fee is above average. At {form.fund_fee_pct}%, you're paying {
+                  Math.round(form.current_balance * (form.fund_fee_pct - 0.14) / 100)
+                }/yr more than the lowest-cost comparable option. See Fee Analyser for the long-term impact.
+              </div>
+            )}
           </div>
 
           {/* SG rate */}
           <div>
-            <Label>
+            <div style={labelStyle}>
               Employer SG rate %
               <Hint>The Superannuation Guarantee rate your employer pays on top of your salary. This is 12% for most employees from 1 July 2025. Check your payslip or employment contract to confirm.</Hint>
-            </Label>
+            </div>
             <input type="number" step="0.5" value={form.employer_sg_rate} onChange={e => set('employer_sg_rate', +e.target.value)} style={monoInput} />
             <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>12% for most employees from 1 Jul 2025</div>
           </div>
 
           {/* Retirement age */}
           <div>
-            <Label>Target retirement age</Label>
+            <div style={labelStyle}>Target retirement age</div>
             <input type="number" value={form.target_retirement_age} onChange={e => set('target_retirement_age', +e.target.value)} style={monoInput} />
-            <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>Preservation age is 60. Age Pension age is 67.</div>
+            <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>Preservation age is 60. Age Pension eligibility age is 67.</div>
           </div>
 
           {/* Account count */}
           <div>
-            <Label>
+            <div style={labelStyle}>
               Number of super accounts
-              <Hint>Check MyGov → ATO → Super to see all your super accounts. Having multiple accounts means paying duplicate fees and insurance. You can consolidate for free via MyGov.</Hint>
-            </Label>
+              <Hint>Check MyGov → ATO → Super to see all your super accounts. Multiple accounts mean duplicate fees and insurance. Consolidating to one fund is free via MyGov and takes 5 minutes.</Hint>
+            </div>
             <input type="number" min="1" value={form.account_count} onChange={e => set('account_count', +e.target.value)} style={monoInput} />
             {form.account_count > 1 && (
               <div style={{ fontSize: 11, color: '#D97706', marginTop: 4 }}>
-                ⚠ Multiple accounts = duplicate fees. Consider consolidating via MyGov.
+                ⚠ Multiple accounts = duplicate fees + duplicate insurance. Consider consolidating via MyGov.
               </div>
             )}
           </div>
@@ -336,18 +498,18 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
         {form.has_spouse && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(15,30,60,0.08)' }}>
             <div>
-              <Label>Spouse income (annual)</Label>
+              <div style={labelStyle}>Spouse income (annual)</div>
               <div style={{ position: 'relative' }}>
                 <span style={prefix}>$</span>
-                <input type="number" value={form.spouse_income} onChange={e => set('spouse_income', +e.target.value)} style={prefixInput} />
+                <input type="number" value={form.spouse_income} onChange={e => set('spouse_income', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
               </div>
               <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>Used to calculate spouse contribution tax offset eligibility</div>
             </div>
             <div>
-              <Label>Spouse super balance</Label>
+              <div style={labelStyle}>Spouse super balance</div>
               <div style={{ position: 'relative' }}>
                 <span style={prefix}>$</span>
-                <input type="number" value={form.spouse_balance} onChange={e => set('spouse_balance', +e.target.value)} style={prefixInput} />
+                <input type="number" value={form.spouse_balance} onChange={e => set('spouse_balance', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
               </div>
             </div>
           </div>
@@ -359,36 +521,31 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
           </div>
         )}
 
-        {/* Save button */}
-        <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button
-            onClick={save}
-            disabled={saving}
-            style={{ padding: '10px 32px', borderRadius: 10, fontSize: 14, fontWeight: 600, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saved ? '#10B981' : '#0F1E3C', color: 'white', opacity: saving ? 0.7 : 1, transition: 'background 0.2s' }}
-          >
+        {/* PDS disclaimer */}
+        <div style={{ marginTop: 20, padding: '10px 14px', background: 'rgba(15,30,60,0.04)', borderRadius: 8, fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'rgba(15,30,60,0.6)' }}>Fee accuracy note:</strong> Fees shown are indicative estimates based on fund PDSs current at June 2026. Investment fees vary by option and change annually. Always verify your exact fee in your fund's current Fees and Costs Guide or PDS. Total fees also include a flat administration fee (typically $1–2/week) not included in the % shown above.
+        </div>
+
+        {/* Save */}
+        <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button onClick={save} disabled={saving}
+            style={{ padding: '10px 32px', borderRadius: 10, fontSize: 14, fontWeight: 600, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saved ? '#10B981' : '#0F1E3C', color: 'white', opacity: saving ? 0.7 : 1 }}>
             {saving ? 'Saving…' : saved ? '✓ Saved!' : 'Save changes'}
           </button>
-          {saved && (
-            <span style={{ fontSize: 13, color: '#10B981' }}>
-              Profile updated — your health score now reflects your details.
-            </span>
-          )}
+          {saved && <span style={{ fontSize: 13, color: '#10B981' }}>Profile updated — your health score now reflects your details.</span>}
         </div>
       </div>
 
       {/* Subscription card */}
       <div style={{ background: 'white', borderRadius: 16, padding: '24px 28px', border: '1px solid rgba(15,30,60,0.1)' }}>
-        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 16 }}>
-          Subscription
-        </div>
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 16 }}>Subscription</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontWeight: 600, color: '#0F1E3C', fontSize: 16, textTransform: 'capitalize' }}>
+            <div style={{ fontWeight: 600, color: '#0F1E3C', fontSize: 16 }}>
               {subscription?.plan === 'free' ? 'Free plan' : `${subscription?.plan} plan`}
             </div>
             <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.5)', marginTop: 2 }}>
-              {subscription?.plan === 'free'
-                ? 'Upgrade to unlock all 8 modules'
+              {subscription?.plan === 'free' ? 'Upgrade to unlock all 8 modules'
                 : subscription?.cancel_at_period_end
                   ? `Cancels ${new Date(subscription.current_period_end).toLocaleDateString('en-AU')}`
                   : subscription?.current_period_end
