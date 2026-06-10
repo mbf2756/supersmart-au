@@ -551,7 +551,7 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
                 You're leaving money on the table
               </div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: 520 }}>
-                SuperSmart AU Optimiser unlocks salary sacrifice modelling, carry-forward tracker, Division 296 tax calculator, spouse contribution strategy, SMSF analytics, and cap expiry alerts.
+                SmartSuper AU Optimiser unlocks salary sacrifice modelling, carry-forward tracker, Division 296 tax calculator, spouse contribution strategy, SMSF analytics, and cap expiry alerts.
                 {feeDrag?.drag > 0 && ` Based on your profile, there's a potential ${fmt(feeDrag.drag)} improvement opportunity over ${yrs} years.`}
                 {' '}For $149/yr — less than your fund charges you every {Math.max(1, Math.round(149 / (annualFeeDollars || 149)))} weeks in fees.
               </div>
