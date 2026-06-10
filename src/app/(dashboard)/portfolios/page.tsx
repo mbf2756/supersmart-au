@@ -4,7 +4,7 @@ import { ProfileGate } from '@/components/ProfileGate'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'ETF Portfolio Builder' }
+export const metadata: Metadata = { title: 'Model portfolios' }
 
 export default async function PortfoliosPage() {
   const supabase = await createClient()
@@ -16,11 +16,11 @@ export default async function PortfoliosPage() {
 
   return <>
     <DashboardTopbar
-      title="ETF portfolio builder"
-      subtitle="Model portfolios for ChoicePlus, Member Direct, and SMSF — with fee and overlap analysis"
+      title="Model portfolios"
+      subtitle="ETF model portfolios for ChoicePlus, Member Direct, and SMSF — with fee and overlap analysis"
     />
     <div className="p-8">
-      <ProfileGate superProfile={superProfile} pageName="ETF portfolio builder" pageIcon="📈">
+      <ProfileGate superProfile={superProfile} pageName="Model portfolios" pageIcon="📈">
         <PortfoliosClient superProfile={superProfile} subscription={subscription} />
       </ProfileGate>
     </div>
