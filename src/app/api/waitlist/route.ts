@@ -23,10 +23,10 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'hello@supersmart.au',
       to: email,
-      subject: "You're on the SuperSmart AU waitlist 🎉",
+      subject: "You're on the SmartSuper AU waitlist 🎉",
       html: `<div style="font-family:sans-serif;max-width:560px;margin:40px auto;padding:20px">
         <h2 style="color:#0F1E3C">You're in!</h2>
-        <p style="color:#4A5F7A;line-height:1.7">Thanks for joining SuperSmart AU — Australia's independent super optimisation platform.</p>
+        <p style="color:#4A5F7A;line-height:1.7">Thanks for joining SmartSuper AU — Australia's independent super optimisation platform.</p>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/signup" style="display:inline-block;background:#00D4AA;color:#0F1E3C;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Get your free super score →</a>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
         <p style="font-size:11px;color:#8A9BB5">General information only. Not financial advice.</p>
