@@ -2,11 +2,11 @@
 import { useState, useMemo } from 'react'
 import { calcSpouseOffset, fmt } from '@/lib/calculations'
 
-export function SpouseClient() {
-  const [yourTSB, setYourTSB] = useState(287450)
-  const [yourSalary, setYourSalary] = useState(135000)
-  const [spouseTSB, setSpouseTSB] = useState(180000)
-  const [spouseIncome, setSpouseIncome] = useState(28000)
+export function SpouseClient({ superProfile: sp }: { superProfile: any }) {
+  const [yourTSB, setYourTSB] = useState(sp?.current_balance ?? 0)
+  const [yourSalary, setYourSalary] = useState(sp?.salary ?? 0)
+  const [spouseTSB, setSpouseTSB] = useState(sp?.spouse_balance ?? 0)
+  const [spouseIncome, setSpouseIncome] = useState(sp?.spouse_income ?? 0)
   const [contribution, setContribution] = useState(3000)
 
   const offsetResult = useMemo(
