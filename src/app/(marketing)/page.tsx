@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'SuperSmart AU — Independent Super Optimisation',
+  title: 'SmartSuper AU — Independent Super Optimisation',
   description: "Australia's only independent super optimisation platform. Free super health score, carry-forward tracker, Division 296 modeller, fee analyser and more.",
 }
 
@@ -29,7 +29,7 @@ export default function HomePage() {
       <nav className="bg-white border-b border-black/8 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
         <div>
           <div className="font-mono text-[10px] text-teal tracking-widest uppercase">AU · SUPER</div>
-          <div className="text-base font-semibold text-navy leading-none">SuperSmart</div>
+          <div className="text-base font-semibold text-navy leading-none">SmartSuper</div>
         </div>
         <div className="flex items-center gap-6">
           <Link href="/pricing" className="text-sm text-navy/60 hover:text-navy transition-colors">Pricing</Link>
@@ -50,7 +50,7 @@ export default function HomePage() {
           <span className="text-teal">Are you getting the most from it?</span>
         </h1>
         <p className="text-xl text-navy/60 mb-10 max-w-2xl mx-auto leading-relaxed">
-          SuperSmart AU is Australia's only independent super optimisation platform. Free health score, carry-forward tracker, fee analyser, and Division 296 modeller — no fund bias, no commissions.
+          SmartSuper AU is Australia's only independent super optimisation platform. Free health score, carry-forward tracker, fee analyser, and Division 296 modeller — no fund bias, no commissions.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/signup" className="px-8 py-3.5 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-colors text-base">
@@ -83,7 +83,7 @@ export default function HomePage() {
           important long-term financial decision they make.
         </p>
         <p className="text-lg text-navy/60 leading-relaxed max-w-2xl mx-auto">
-          SuperSmart AU doesn't give advice. It gives you the same <em>information and modelling</em> 
+          SmartSuper AU doesn't give advice. It gives you the same <em>information and modelling</em> 
           that a good adviser would use — so you can make your own informed decisions.
         </p>
       </section>
@@ -121,7 +121,7 @@ export default function HomePage() {
           <div className="flex items-start justify-between mb-8">
             <div>
               <div className="font-mono text-xs text-teal tracking-widest uppercase mb-1">AU · SUPER</div>
-              <div className="text-white font-semibold">SuperSmart AU</div>
+              <div className="text-white font-semibold">SmartSuper AU</div>
             </div>
             <div className="flex gap-8 text-sm text-white/40">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
@@ -130,7 +130,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-white/10 pt-6 text-xs text-white/30 leading-relaxed">
-            SuperSmart AU provides general financial information and modelling only. It does not constitute financial product advice and does not take into account your personal financial objectives, situation or needs. Before acting on any information, you should consider whether it is appropriate for your circumstances and seek independent financial advice if needed. SuperSmart AU is not an Australian Financial Services licensee.
+            SmartSuper AU provides general financial information and modelling only. It does not constitute financial product advice and does not take into account your personal financial objectives, situation or needs. Before acting on any information, you should consider whether it is appropriate for your circumstances and seek independent financial advice if needed. SmartSuper AU is not an Australian Financial Services licensee.
           </div>
         </div>
       </footer>
