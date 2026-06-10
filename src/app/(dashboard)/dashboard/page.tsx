@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { DashboardTopbar } from '@/components/DashboardTopbar'
 import { DashboardClient } from '@/components/DashboardClient'
 import type { Metadata } from 'next'
@@ -9,11 +10,15 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) redirect('/login')
+
   const [{ data: profile }, { data: superProfile }, { data: subscription }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user!.id).single(),
-    supabase.from('super_profiles').select('*').eq('user_id', user!.id).single(),
-    supabase.from('subscriptions').select('*').eq('user_id', user!.id).single(),
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('super_profiles').select('*').eq('user_id', user.id).single(),
+    supabase.from('subscriptions').select('*').eq('user_id', user.id).single(),
   ])
+
+  const profileIsEmpty = !superProfile?.salary || superProfile.salary === 80000 && superProfile.current_balance === 0
 
   return (
     <>
@@ -26,6 +31,7 @@ export default async function DashboardPage() {
           profile={profile}
           superProfile={superProfile}
           subscription={subscription}
+          profileIsEmpty={profileIsEmpty}
         />
       </div>
     </>
