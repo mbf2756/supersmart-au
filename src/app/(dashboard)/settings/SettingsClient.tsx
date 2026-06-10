@@ -39,7 +39,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
       const { error: dbError } = await supabase
         .from('super_profiles')
-        .upsert({ ...form, user_id: user.id })
+        .upsert({ ...form, user_id: user.id }, { onConflict: 'user_id' })
 
       if (dbError) {
         setError(dbError.message)
