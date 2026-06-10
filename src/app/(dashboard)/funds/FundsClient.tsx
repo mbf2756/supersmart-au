@@ -6,8 +6,11 @@ import { calcFeeDrag, fmt, fmtShort } from '@/lib/calculations'
 // DATA SOURCE: u/SwaankyKoala Super Comparison spreadsheet (Fees & Performance)
 // Cross-validated against official fund PDSs, June 2026
 //
-// fee = investment fee % p.a. only (excludes flat admin fee)
-// Admin fees are listed separately below and shown in the table
+// fee = investment fee % p.a. from fund's own PDS (matches fund website)
+// feeReclassified = extra levy the spreadsheet folds into invest fee for
+//   apples-to-apples comparison. The TOTAL/yr column is always correct.
+//   Vanguard: +0.05% ORFR | AMP: +0.015% | Mercer: +0.05% | MLC: +0.02%
+//   These funds' invest fee shown here matches their website; total is adjusted.
 // ret1/ret5/ret7/ret10 = net returns to 30 June 2025 (FY25 sheet)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -16,7 +19,8 @@ type FundOption = {
   option: string
   type: 'Industry' | 'Public sector' | 'Retail'
   category: string
-  fee: number            // investment fee % p.a.
+  fee: number            // invest fee % p.a. from fund's own PDS/website
+  feeForTotal?: number   // if set, use this for total cost calc (spreadsheet comparison basis)
   adminFixed: number     // flat $ p.a.
   adminPct: number       // % of AUM
   adminCap: number | null
@@ -152,12 +156,13 @@ const ALL_OPTIONS: FundOption[] = [
     restWarning: true,
     note: 'Uses derivative contracts (total return swaps) not direct shareholding. Hidden cost ~0.20–0.35% on international holdings due to benchmark tax assumptions.' },
 
-  // Vanguard Super: invest = 0.28% (flat fee, no admin fixed)
+  // Vanguard Super Balanced Growth: admin=0.33% capped $840, invest=0.21%, transaction=0.00%
+  // Total stated on website = 0.54% (at balances under $254k). Above that, admin caps at $840.
   { fund: 'Vanguard Super', option: 'Lifecycle Balanced Growth', type: 'Retail', category: 'balanced-indexed',
-    fee: 0.0028, adminFixed: 0, adminPct: 0.0028, adminCap: 840,
+    fee: 0.0021, feeForTotal: 0.0026, adminFixed: 0, adminPct: 0.0033, adminCap: 840,
     ret1: null, ret5: null, ret7: null, ret10: null, apra: 'passed',
     esg: 'None', passive: true,
-    note: 'Single 0.28% flat fee covers both admin and investment. Simple, transparent.' },
+    note: 'Website shows 0.54% total (admin 0.33% + invest 0.21%). Admin capped at $840/yr above ~$255k balance. The 0.05% ORFR levy is separately added for cross-fund comparison.' },
 
   // ─── HIGH GROWTH / INDEXED SHARES ─────────────────────────────────────────
   // Hostplus Indexed Shares: invest = 0.02% (PDS: cost $129 - $119 admin = $10 = 0.02%)
@@ -229,12 +234,13 @@ const ALL_OPTIONS: FundOption[] = [
     ret1: 0.1180, ret5: 0.1059, ret7: null, ret10: 0.0928, apra: 'passed',
     esg: 'Partial ESG screens', passive: false },
 
-  // Vanguard Super High Growth: invest = 0.26% (flat)
+  // Vanguard Super High Growth: admin=0.33% capped $840, invest=0.21%, transaction=0.00%
+  // Website shows 0.54% total at small balances; caps above ~$255k
   { fund: 'Vanguard Super', option: 'High Growth', type: 'Retail', category: 'highgrowth-active',
-    fee: 0.0026, adminFixed: 0, adminPct: 0.0028, adminCap: 840,
+    fee: 0.0021, feeForTotal: 0.0026, adminFixed: 0, adminPct: 0.0033, adminCap: 840,
     ret1: 0.1348, ret5: null, ret7: null, ret10: null, apra: 'passed',
     esg: 'None', passive: true,
-    note: 'Single flat fee ~0.28% covers everything including administration.' },
+    note: 'Website shows 0.54% total (admin 0.33% + invest 0.21%). Admin fee capped at $840/yr for balances over ~$255k. Includes 0.05% ORFR for comparison purposes.' },
 
   // ─── HIGH GROWTH SRI ──────────────────────────────────────────────────────
   // Aware Super SRI: invest = 0.44% (Fees-HG SRI: total at $50k=$347, admin=$127, invest=$220=0.44%)
@@ -293,7 +299,9 @@ function adminAtBalance(o: FundOption, balance: number): number {
 }
 
 function totalFeeAtBalance(o: FundOption, balance: number): number {
-  return o.fee * balance + adminAtBalance(o, balance)
+  // Use feeForTotal (spreadsheet comparison basis) when available, else stated fee
+  const feeRate = o.feeForTotal ?? o.fee
+  return feeRate * balance + adminAtBalance(o, balance)
 }
 
 function effectiveFeeRate(o: FundOption, balance: number): number {
@@ -619,7 +627,17 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
                         {fund.passive && <span style={{ marginLeft: 4, fontSize: 9, background: 'rgba(83,74,183,0.1)', color: '#3C3489', padding: '1px 5px', borderRadius: 3 }}>INDEX</span>}
                       </td>
                       <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: feeColor(fund.fee) }}>
-                        {fund.fee === 0 ? <span style={{ color: '#D97706' }}>~0%*</span> : `${(fund.fee * 100).toFixed(2)}%`}
+                        {fund.fee === 0
+                          ? <span style={{ color: '#D97706' }}>~0%*</span>
+                          : <span>
+                              {`${(fund.fee * 100).toFixed(2)}%`}
+                              {fund.feeForTotal && (
+                                <span style={{ display: 'block', fontSize: 10, color: 'rgba(15,30,60,0.4)', fontFamily: 'sans-serif' }}>
+                                  †+{((fund.feeForTotal - fund.fee) * 100).toFixed(2)}% levy
+                                </span>
+                              )}
+                            </span>
+                        }
                       </td>
                       <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: 'rgba(15,30,60,0.5)', fontSize: 12 }}>
                         {fmt(adminAmt)}/yr
@@ -655,6 +673,11 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
             <button onClick={() => setShowAll(v => !v)} style={{ marginTop: 12, background: 'none', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 8, padding: '6px 16px', fontSize: 12, color: 'rgba(15,30,60,0.6)', cursor: 'pointer' }}>
               {showAll ? 'Show top 8 only' : `Show all ${peers.length} options`}
             </button>
+          )}
+          {peers.some(p => p.feeForTotal) && (
+            <div style={{ marginTop: 10, fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
+              † Some funds (e.g. Vanguard, AMP, Mercer, MLC) include a small levy (ORFR, Trustee Fee, or Expense Allowance) that is classified differently across PDSs. The invest fee % shown matches the fund's own website. The Total/yr column uses the adjusted rate for accurate cross-fund comparison — this is why Vanguard's invest fee shows 0.21% here but 0.54% total on their website (the difference is the 0.33% admin fee + 0.05% ORFR levy).
+            </div>
           )}
         </div>
 
