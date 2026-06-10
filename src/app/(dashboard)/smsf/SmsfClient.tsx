@@ -1,8 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { Card, CardTitle } from '@/components/ui/Card'
-import { Alert } from '@/components/ui/Alert'
-import { Paywall } from '@/components/ui/Paywall'
 import { fmt } from '@/lib/calculations'
 
 const DEFAULT_HOLDINGS = [
@@ -25,85 +22,106 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
   const [holdings] = useState(initialHoldings.length > 0 ? initialHoldings : DEFAULT_HOLDINGS)
 
   const total = holdings.reduce((s, h) => s + (h.value || 0), 0)
-
-  const detectedOverlaps = Object.entries(OVERLAP_PAIRS).filter(([key, { overlaps }]) => {
-    const tickers = holdings.map(h => h.ticker)
+  const detectedOverlaps = Object.entries(OVERLAP_PAIRS).filter(([, { overlaps }]) => {
+    const tickers = holdings.map((h: any) => h.ticker)
     return overlaps.every(t => tickers.includes(t))
   })
 
+  const card = { background: 'white', borderRadius: 16, padding: '24px', border: '1px solid rgba(15,30,60,0.1)' }
+  const sectionLabel = { fontSize: 11, fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }
+
   if (!isPaid) {
     return (
-      <div className="max-w-5xl">
-        <Paywall feature="SMSF Analytics — ETF overlap, TBAR deadlines, minimum pension tracking" requiredPlan="optimiser" />
+      <div style={{ maxWidth: 960 }}>
+        <div style={{ ...card, textAlign: 'center', padding: '60px 40px' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>◈</div>
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#0F1E3C', marginBottom: 8 }}>SMSF Analytics</h3>
+          <p style={{ fontSize: 13, color: 'rgba(15,30,60,0.6)', maxWidth: 360, margin: '0 auto 20px', lineHeight: 1.7 }}>
+            ETF overlap detection, TBAR deadline tracking, and minimum pension calculations. Available on the Optimiser plan.
+          </p>
+          <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '10px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
+            Upgrade — from $149/year
+          </a>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl space-y-5">
+    <div style={{ maxWidth: 960 }}>
       {detectedOverlaps.length > 0 && (
-        <Alert variant="warning" title={`${detectedOverlaps.length} ETF overlap${detectedOverlaps.length > 1 ? 's' : ''} detected`}>
-          {detectedOverlaps[0][1].reason}
-        </Alert>
+        <div style={{ background: '#FFFBEB', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10 }}>
+          <span style={{ flexShrink: 0 }}>⚠</span>
+          <div style={{ color: '#78350F', fontSize: 13, lineHeight: 1.6 }}>
+            <div style={{ fontWeight: 500, marginBottom: 2 }}>{detectedOverlaps.length} ETF overlap{detectedOverlaps.length > 1 ? 's' : ''} detected</div>
+            <div style={{ opacity: 0.85 }}>{detectedOverlaps[0][1].reason}</div>
+          </div>
+        </div>
       )}
 
-      <div className="grid grid-cols-2 gap-5">
-        <Card>
-          <CardTitle>SMSF holdings — sample portfolio</CardTitle>
-          <p className="text-xs text-navy/50 mb-3">Update your holdings in Settings → SMSF Portfolio</p>
-          <table className="w-full text-sm">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+
+        {/* Holdings */}
+        <div style={card}>
+          <div style={sectionLabel}>SMSF holdings — sample portfolio</div>
+          <p style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)', marginBottom: 14 }}>Update your holdings in Settings → SMSF Portfolio</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="border-b-2 border-black/8 text-xs text-navy/40 uppercase tracking-wide font-medium">
-                <th className="text-left pb-2">ETF</th>
-                <th className="text-right pb-2">Value</th>
-                <th className="text-right pb-2">Allocation</th>
-                <th className="text-right pb-2">Class</th>
+              <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
+                {['ETF', 'Value', 'Allocation', 'Class'].map(h => (
+                  <th key={h} style={{ textAlign: h === 'ETF' ? 'left' : 'right', padding: '6px 8px', fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {holdings.map(h => {
+              {holdings.map((h: any) => {
                 const pct = total > 0 ? (h.value / total) * 100 : 0
                 const hasOverlap = detectedOverlaps.some(([, { overlaps }]) => overlaps.includes(h.ticker))
                 return (
-                  <tr key={h.ticker} className={`border-b border-black/5 ${hasOverlap ? 'bg-amber-50' : ''}`}>
-                    <td className="py-2.5 font-mono font-medium text-navy flex items-center gap-1.5">
+                  <tr key={h.ticker} style={{ borderBottom: '1px solid rgba(15,30,60,0.05)', background: hasOverlap ? '#FFFBEB' : 'transparent' }}>
+                    <td style={{ padding: '10px 8px', fontFamily: 'monospace', fontWeight: 500, color: '#0F1E3C' }}>
                       {h.ticker}
-                      {hasOverlap && <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">OVERLAP</span>}
+                      {hasOverlap && <span style={{ marginLeft: 6, fontSize: 9, background: '#FEF3C7', color: '#92400E', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>OVERLAP</span>}
                     </td>
-                    <td className="py-2.5 text-right font-mono text-navy">{fmt(h.value)}</td>
-                    <td className="py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-navy rounded-full" style={{ width: `${pct}%` }} />
+                    <td style={{ padding: '10px 8px', fontFamily: 'monospace', color: '#0F1E3C', textAlign: 'right' }}>{fmt(h.value)}</td>
+                    <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                        <div style={{ width: 48, height: 4, background: 'rgba(15,30,60,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: '#0F1E3C', borderRadius: 2 }} />
                         </div>
-                        <span className="font-mono text-xs text-navy/70 w-8">{pct.toFixed(0)}%</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(15,30,60,0.7)', minWidth: 28 }}>{pct.toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="py-2.5 text-right text-xs text-navy/50">{h.asset_class?.replace('_', ' ')}</td>
+                    <td style={{ padding: '10px 8px', fontSize: 11, color: 'rgba(15,30,60,0.5)', textAlign: 'right' }}>{h.asset_class?.replace('_', ' ')}</td>
                   </tr>
                 )
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-black/10">
-                <td className="pt-3 font-medium text-navy">Total</td>
-                <td className="pt-3 text-right font-mono font-semibold text-navy">{fmt(total)}</td>
+              <tr style={{ borderTop: '2px solid rgba(15,30,60,0.1)' }}>
+                <td style={{ padding: '10px 8px', fontWeight: 500, color: '#0F1E3C' }}>Total</td>
+                <td style={{ padding: '10px 8px', fontFamily: 'monospace', fontWeight: 600, color: '#0F1E3C', textAlign: 'right' }}>{fmt(total)}</td>
                 <td colSpan={2} />
               </tr>
             </tfoot>
           </table>
-        </Card>
+        </div>
 
-        <div className="space-y-4">
-          <Card>
-            <CardTitle>TBAR deadline tracker</CardTitle>
-            <p className="text-xs text-navy/60 leading-relaxed mb-3">Transfer Balance Account Reports must be lodged within 28 days of each quarter end.</p>
-            <table className="w-full text-sm">
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* TBAR */}
+          <div style={card}>
+            <div style={sectionLabel}>TBAR deadline tracker</div>
+            <p style={{ fontSize: 12, color: 'rgba(15,30,60,0.6)', lineHeight: 1.6, marginBottom: 14 }}>
+              Transfer Balance Account Reports must be lodged within 28 days of each quarter end.
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr className="border-b border-black/8 text-xs text-navy/40 font-medium uppercase tracking-wide">
-                  <th className="text-left pb-2">Quarter end</th>
-                  <th className="text-right pb-2">TBAR due</th>
-                  <th className="text-right pb-2">Status</th>
+                <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
+                  {['Quarter end', 'TBAR due', 'Status'].map(h => (
+                    <th key={h} style={{ textAlign: h === 'Status' ? 'right' : 'left', padding: '5px 8px', fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -112,11 +130,11 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                   { qtr: '30 Sep 2026', due: '28 Oct 2026', status: 'upcoming' },
                   { qtr: '31 Dec 2026', due: '28 Jan 2027', status: 'upcoming' },
                 ].map(r => (
-                  <tr key={r.qtr} className="border-b border-black/5">
-                    <td className="py-2.5 text-navy">{r.qtr}</td>
-                    <td className={`py-2.5 text-right font-mono text-sm ${r.status === 'due-soon' ? 'text-amber-600 font-medium' : 'text-navy/60'}`}>{r.due}</td>
-                    <td className="py-2.5 text-right">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === 'due-soon' ? 'bg-amber-50 text-amber-800' : 'bg-surface-2 text-navy/50'}`}>
+                  <tr key={r.qtr} style={{ borderBottom: '1px solid rgba(15,30,60,0.05)' }}>
+                    <td style={{ padding: '9px 8px', color: '#0F1E3C' }}>{r.qtr}</td>
+                    <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 12, color: r.status === 'due-soon' ? '#D97706' : 'rgba(15,30,60,0.6)', fontWeight: r.status === 'due-soon' ? 500 : 400 }}>{r.due}</td>
+                    <td style={{ padding: '9px 8px', textAlign: 'right' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: r.status === 'due-soon' ? '#FEF3C7' : 'rgba(15,30,60,0.06)', color: r.status === 'due-soon' ? '#92400E' : 'rgba(15,30,60,0.5)' }}>
                         {r.status === 'due-soon' ? 'Due soon' : 'Not yet due'}
                       </span>
                     </td>
@@ -124,16 +142,17 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                 ))}
               </tbody>
             </table>
-          </Card>
+          </div>
 
-          <Card>
-            <CardTitle>Minimum pension drawdown rates</CardTitle>
-            <table className="w-full text-sm">
+          {/* Min pension */}
+          <div style={card}>
+            <div style={sectionLabel}>Minimum pension drawdown rates</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr className="border-b border-black/8 text-xs text-navy/40 font-medium uppercase tracking-wide">
-                  <th className="text-left pb-2">Age bracket</th>
-                  <th className="text-right pb-2">Min %</th>
-                  <th className="text-right pb-2">On $500k</th>
+                <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
+                  {['Age bracket', 'Min %', 'On $500k'].map(h => (
+                    <th key={h} style={{ textAlign: h === 'Age bracket' ? 'left' : 'right', padding: '5px 8px', fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -144,20 +163,21 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                   ['80–84', '7%', '$35,000'],
                   ['85+', '9–14%', '$45k+'],
                 ].map(([age, pct, amt]) => (
-                  <tr key={age} className="border-b border-black/5">
-                    <td className="py-2.5 text-navy">{age}</td>
-                    <td className="py-2.5 text-right font-mono text-navy">{pct}</td>
-                    <td className="py-2.5 text-right font-mono text-navy/60">{amt}</td>
+                  <tr key={age} style={{ borderBottom: '1px solid rgba(15,30,60,0.05)' }}>
+                    <td style={{ padding: '9px 8px', color: '#0F1E3C' }}>{age}</td>
+                    <td style={{ padding: '9px 8px', fontFamily: 'monospace', color: '#0F1E3C', textAlign: 'right' }}>{pct}</td>
+                    <td style={{ padding: '9px 8px', fontFamily: 'monospace', color: 'rgba(15,30,60,0.6)', textAlign: 'right' }}>{amt}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </Card>
+          </div>
         </div>
       </div>
-      <p className="text-xs text-navy/40 bg-navy/4 border border-navy/8 rounded-xl px-4 py-3">
+
+      <div style={{ background: 'rgba(15,30,60,0.04)', border: '1px solid rgba(15,30,60,0.08)', borderRadius: 12, padding: '12px 16px', fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
         SMSF analytics are general information only. ETF overlap analysis is approximate. SMSF trustees are responsible for all ATO compliance obligations. This tool does not replace a qualified SMSF auditor or accountant.
-      </p>
+      </div>
     </div>
   )
 }
