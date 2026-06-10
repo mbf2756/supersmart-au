@@ -310,6 +310,47 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
             </p>
           </div>
 
+          {/* Research stats */}
+          <div style={{ background: 'rgba(15,30,60,0.04)', border: '1px solid rgba(15,30,60,0.1)', borderRadius: 14, padding: '18px 20px' }}>
+            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>Why fees matter so much</div>
+            {[
+              { stat: '15%', label: 'less annual income in retirement from a 1% fee during drawdown', source: 'Mahaney (2023)', color: '#EF4444' },
+              { stat: '23%', label: 'less inheritance from a 1% fee in retirement', source: 'Mahaney (2023)', color: '#EF4444' },
+              { stat: '84%', label: 'of active funds underperformed the market over 15 years', source: 'SPIVA Dec 2022', color: '#D97706' },
+              { stat: '$85k+', label: 'retirement balance difference from 1% fee gap over 40 years', source: 'MoneySmart calculator', color: '#EF4444' },
+            ].map(item => (
+              <div key={item.stat} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(15,30,60,0.06)' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: item.color, minWidth: 52, flexShrink: 0 }}>{item.stat}</div>
+                <div>
+                  <div style={{ fontSize: 12, color: '#0F1E3C', lineHeight: 1.5 }}>{item.label}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(15,30,60,0.4)', marginTop: 1 }}>{item.source}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: 12, fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
+              A 1% fee difference has the <strong style={{ color: '#0F1E3C' }}>same long-term impact as a 1% lower investment return</strong> — they are mathematically equivalent in their effect on your retirement balance.
+            </div>
+          </div>
+
+          {/* Fee types explained */}
+          <div style={{ background: 'white', border: '1px solid rgba(15,30,60,0.1)', borderRadius: 14, padding: '18px 20px' }}>
+            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>The 4 types of super fees</div>
+            {[
+              { name: 'Investment fee', type: '%', desc: 'The main variable fee — charged as a % of your balance for managing your investment option. This is what varies between options and is shown above.' },
+              { name: 'Administration fee', type: '$', desc: 'Fixed dollar amount (typically $78–104/yr) for running the fund. Usually the same regardless of which option you\'re in.' },
+              { name: 'Transaction costs', type: '%', desc: 'Small % costs for buying and selling assets within the option. Usually 0.01–0.10%. Shown in your fund\'s Fees & Costs Guide.' },
+              { name: 'Insurance fees', type: '$', desc: 'Death, TPD, and income protection cover. Often bundled in. Check your annual statement — these can be $200–800+/yr and are separate from investment fees.' },
+            ].map(f => (
+              <div key={f.name} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(15,30,60,0.06)' }}>
+                <span style={{ width: 24, height: 24, borderRadius: 6, background: f.type === '%' ? '#EDE9FE' : 'rgba(15,30,60,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: f.type === '%' ? '#3C3489' : '#0F1E3C', flexShrink: 0 }}>{f.type}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#0F1E3C', marginBottom: 2 }}>{f.name}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.6)', lineHeight: 1.5 }}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* What to do next */}
           {!isAlreadyLowFee && result.drag > 10000 && (
             <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
@@ -317,10 +358,10 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
                 What you can do right now
               </div>
               {[
-                { step: '1', text: `Ask your fund about lower-cost options — many funds offer indexed options at 0.05–0.15% within the same fund` },
-                { step: '2', text: `Compare using the Fund Comparison page — see all like-for-like alternatives with actual return data` },
-                { step: '3', text: `Check MyGov for any lost super — you may have old accounts accumulating fees with no contributions going in` },
-                { step: '4', text: `Before switching funds, check for exit fees, insurance cover differences, and whether you'll lose contribution history` },
+                { step: '1', text: `Ask your fund: "Do you have an indexed option?" — many funds offer indexed options at 0.05–0.15% within the same fund. Switching investment option is instant and free.` },
+                { step: '2', text: `Compare on the Fund Comparison page — see like-for-like alternatives with actual return and fee data specific to your option type.` },
+                { step: '3', text: `Check MyGov → ATO → Super for lost accounts — old accounts accumulate fees with no contributions going in.` },
+                { step: '4', text: `Before switching funds: check for exit fees, whether you'll lose insurance cover, and seek financial advice if unsure.` },
               ].map(item => (
                 <div key={item.step} style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#00D4AA', flexShrink: 0, marginTop: 1 }}>
@@ -330,7 +371,7 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
                 </div>
               ))}
               <a href="/funds" style={{ display: 'inline-block', marginTop: 6, background: '#00D4AA', color: '#0F1E3C', padding: '8px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
-                Compare funds → 
+                Compare funds →
               </a>
             </div>
           )}
