@@ -30,7 +30,10 @@ const ALL_OPTIONS = [
   { fund: 'Hostplus', option: 'Indexed Balanced', type: 'Industry', category: 'balanced-indexed', ret7: 9.0, fee: 0.11, apra: 'passed' },
   { fund: 'Australian Retirement Trust', option: 'Indexed Balanced', type: 'Industry', category: 'balanced-indexed', ret7: 8.8, fee: 0.16, apra: 'passed' },
   { fund: 'Aware Super', option: 'Indexed Growth', type: 'Industry', category: 'balanced-indexed', ret7: 8.7, fee: 0.15, apra: 'passed' },
-  { fund: 'REST', option: 'Indexed Global Shares', type: 'Industry', category: 'balanced-indexed', ret7: 9.5, fee: 0.15, apra: 'passed' },
+  // ── INDUSTRY: INDEXED SHARES (treated as high growth equivalent) ──
+  { fund: 'Hostplus', option: 'Indexed Shares', type: 'Industry', category: 'highgrowth-active', ret7: 10.1, fee: 0.08, apra: 'passed' },
+  { fund: 'REST', option: 'Indexed Global Shares', type: 'Industry', category: 'highgrowth-active', ret7: 9.5, fee: 0.15, apra: 'passed' },
+  { fund: 'AustralianSuper', option: 'Indexed Diversified', type: 'Industry', category: 'highgrowth-active', ret7: 9.2, fee: 0.14, apra: 'passed' },
   // ── INDUSTRY: HIGH GROWTH ──
   { fund: 'AustralianSuper', option: 'High Growth', type: 'Industry', category: 'highgrowth-active', ret7: 9.8, fee: 0.58, apra: 'passed' },
   { fund: 'UniSuper', option: 'High Growth', type: 'Industry', category: 'highgrowth-active', ret7: 9.6, fee: 0.43, apra: 'passed' },
@@ -50,7 +53,10 @@ const ALL_OPTIONS = [
 // Map user's option name → comparison category
 function detectCategory(fundName: string, optionName: string): string {
   const opt = optionName.toLowerCase()
-  if (opt.includes('indexed')) return 'balanced-indexed'
+  // Indexed shares / global shares are equity-heavy, compare against high growth
+  if (opt.includes('indexed share') || opt.includes('indexed global') || opt.includes('index share')) return 'highgrowth-active'
+  // Other indexed options are balanced-indexed
+  if (opt.includes('indexed') || opt.includes('index ')) return 'balanced-indexed'
   if (opt.includes('high growth') || opt.includes('highgrowth')) return 'highgrowth-active'
   if (opt.includes('growth') && !opt.includes('conservative') && !opt.includes('balanced')) return 'growth-active'
   if (opt.includes('conservative') || opt.includes('capital stable') || opt.includes('stable')) return 'conservative-active'
@@ -58,7 +64,10 @@ function detectCategory(fundName: string, optionName: string): string {
   return 'balanced-active' // default — most people are in some form of balanced
 }
 
-function categoryLabel(cat: string): string {
+function categoryLabel(cat: string, optionName?: string): string {
+  if (cat === 'highgrowth-active' && optionName?.toLowerCase().includes('indexed')) {
+    return 'Indexed Shares / High Growth Equivalent'
+  }
   return {
     'balanced-active': 'Balanced (active management)',
     'balanced-indexed': 'Balanced (indexed / passive)',
@@ -110,11 +119,41 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
       (sp?.salary ?? 0) * (sp?.employer_sg_rate ?? 12) / 100)
   }, [userBalance, userFee, bestFee, sp, hasProfile])
 
-  // Find user's fund in the peer list
-  const userFundInPeers = peers.find(p =>
-    p.fund.toLowerCase().includes(userFundName.toLowerCase().split(' ')[0]) &&
-    p.option.toLowerCase().includes(userOption.toLowerCase().split(' ')[0])
-  )
+  // Find user's fund in the peer list — exact match first, then fuzzy fallback
+  const userFundInPeers = useMemo(() => {
+    if (!userFundName || !userOption) return undefined
+    const fundLower = userFundName.toLowerCase()
+    const optLower = userOption.toLowerCase()
+
+    // 1. Try exact fund + exact option match
+    const exact = peers.find(p =>
+      p.fund.toLowerCase() === fundLower &&
+      p.option.toLowerCase() === optLower
+    )
+    if (exact) return exact
+
+    // 2. Try exact fund + option contains match (handles slight wording differences)
+    const fundExactOptPartial = peers.find(p =>
+      p.fund.toLowerCase() === fundLower &&
+      (p.option.toLowerCase().includes(optLower) || optLower.includes(p.option.toLowerCase()))
+    )
+    if (fundExactOptPartial) return fundExactOptPartial
+
+    // 3. Try fund name contains + option exact
+    const fundPartial = peers.find(p =>
+      fundLower.includes(p.fund.toLowerCase().split(' ')[0]) &&
+      p.option.toLowerCase() === optLower
+    )
+    if (fundPartial) return fundPartial
+
+    // 4. Fund name contains + first meaningful word of option matches
+    // Only match if the first keyword is specific enough (not just "indexed")
+    const optKeyword = optLower.replace(/\(.*\)/g, '').trim().split(' ').slice(0, 2).join(' ')
+    return peers.find(p =>
+      fundLower.includes(p.fund.toLowerCase().split(' ')[0]) &&
+      p.option.toLowerCase().includes(optKeyword)
+    )
+  }, [peers, userFundName, userOption])
 
   const displayPeers = showAll ? peers : peers.slice(0, 8)
 
@@ -151,7 +190,7 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
             <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 2 }}>{userFundName}</div>
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{userOption}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', padding: '3px 10px', borderRadius: 20, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-              Comparing against: {categoryLabel(userCategory)}
+              Comparing against: {categoryLabel(userCategory, userOption)}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 32 }}>
@@ -247,7 +286,7 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <div style={sectionLabel}>{categoryLabel(userCategory)} — like-for-like comparison</div>
+            <div style={sectionLabel}>{categoryLabel(userCategory, userOption)} — like-for-like comparison</div>
             <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)' }}>
               Showing {peers.length} funds in the same category as your option · ranked by 7-year net return
             </div>
