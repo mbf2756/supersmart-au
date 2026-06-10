@@ -1,7 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { Card, CardTitle } from '@/components/ui/Card'
-import { Select } from '@/components/ui/Input'
 import { fmt } from '@/lib/calculations'
 
 const FUNDS = [
@@ -23,86 +21,97 @@ export function FundsClient() {
   const current = FUNDS.find(f => f.isCurrent)!
   const best = FUNDS[0]
 
+  const card = { background: 'white', borderRadius: 16, padding: '24px', border: '1px solid rgba(15,30,60,0.1)' }
+
   return (
-    <div className="max-w-5xl space-y-5">
-      <div className="grid grid-cols-2 gap-5">
-        <Card>
-          <div className="space-y-3">
-            <Select label="Fund type" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+    <div style={{ maxWidth: 960 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+
+        {/* Filter card */}
+        <div style={card}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(15,30,60,0.5)', marginBottom: 6 }}>
+              Fund type
+            </label>
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, fontSize: 13, color: '#0F1E3C', background: 'white', outline: 'none' }}>
               <option value="all">All funds</option>
               <option value="industry">Industry funds</option>
               <option value="retail">Retail funds</option>
-            </Select>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-navy/60 uppercase tracking-wide">Balance for fee calculation</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-navy/40 text-sm">$</span>
-                <input type="number" value={balance} onChange={e => setBalance(+e.target.value)}
-                  className="w-full pl-7 pr-3.5 py-2.5 rounded-xl border border-black/10 font-mono text-sm focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20" />
-              </div>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(15,30,60,0.5)', marginBottom: 6 }}>
+              Balance for fee calculation
+            </label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(15,30,60,0.4)', fontSize: 13 }}>$</span>
+              <input type="number" value={balance} onChange={e => setBalance(+e.target.value)}
+                style={{ width: '100%', paddingLeft: 28, paddingRight: 14, paddingTop: 10, paddingBottom: 10, border: '1px solid rgba(15,30,60,0.12)', borderRadius: 10, fontFamily: 'monospace', fontSize: 14, color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' }} />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <div className="bg-navy rounded-2xl p-6 text-white">
-          <div className="text-xs text-white/40 uppercase tracking-widest mb-1">Comparing your fund</div>
-          <div className="text-xl font-semibold mb-1">{current.name}</div>
-          <div className="text-sm text-white/50 mb-4">{current.fee}% p.a. · {current.ret7}% 7-yr return</div>
-          <div className="flex gap-6">
+        {/* Your fund summary */}
+        <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '24px', color: 'white' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Comparing your fund</div>
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>{current.name}</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>{current.fee}% p.a. · {current.ret7}% 7-yr return</div>
+          <div style={{ display: 'flex', gap: 28 }}>
             <div>
-              <div className="font-mono text-2xl font-medium text-red-400">+{(current.fee - best.fee).toFixed(2)}%</div>
-              <div className="text-xs text-white/40 mt-0.5">vs best-fee fund</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 500, color: '#EF4444' }}>+{(current.fee - best.fee).toFixed(2)}%</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>vs best-fee fund</div>
             </div>
             <div>
-              <div className="font-mono text-2xl font-medium text-amber-400">−{(best.ret7 - current.ret7).toFixed(1)}%</div>
-              <div className="text-xs text-white/40 mt-0.5">vs top-return fund</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 500, color: '#F59E0B' }}>−{(best.ret7 - current.ret7).toFixed(1)}%</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>vs top-return fund</div>
             </div>
             <div>
-              <div className="font-mono text-2xl font-medium text-red-400">−{fmt((current.fee - best.fee) * balance / 100)}</div>
-              <div className="text-xs text-white/40 mt-0.5">extra fees p.a.</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 500, color: '#EF4444' }}>−{fmt((current.fee - best.fee) * balance / 100)}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>extra fees p.a.</div>
             </div>
           </div>
         </div>
       </div>
 
-      <Card>
-        <CardTitle>Top MySuper balanced options — ranked by 7-year net return</CardTitle>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
+      {/* Fund table */}
+      <div style={card}>
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 16 }}>
+          Top MySuper balanced options — ranked by 7-year net return
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="border-b-2 border-black/8 text-xs text-navy/40 uppercase tracking-wide font-medium">
-                <th className="text-left pb-3 pl-2">#</th>
-                <th className="text-left pb-3">Fund</th>
-                <th className="text-left pb-3">Type</th>
-                <th className="text-right pb-3">7-yr return</th>
-                <th className="text-right pb-3">Fee %</th>
-                <th className="text-right pb-3">Fee $ (your balance)</th>
-                <th className="text-right pb-3 pr-2">APRA 2025</th>
+              <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
+                {['#', 'Fund', 'Type', '7-yr return', 'Fee %', `Fee $ (${fmt(balance)})`, 'APRA 2025'].map(h => (
+                  <th key={h} style={{ textAlign: h === '#' || h === 'Fund' ? 'left' : 'right', padding: '6px 10px', fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((fund, i) => (
-                <tr key={fund.name}
-                  className={`border-b border-black/5 hover:bg-surface transition-colors ${fund.isCurrent ? 'bg-teal/5 ring-1 ring-inset ring-teal/30' : ''}`}>
-                  <td className="py-3 pl-2 font-mono text-navy/30 text-xs">{i + 1}</td>
-                  <td className="py-3 font-medium text-navy">
+                <tr key={fund.name} style={{
+                  borderBottom: '1px solid rgba(15,30,60,0.05)',
+                  background: fund.isCurrent ? 'rgba(0,212,170,0.04)' : 'transparent',
+                  outline: fund.isCurrent ? '1px solid rgba(0,212,170,0.25)' : 'none',
+                }}>
+                  <td style={{ padding: '10px', fontFamily: 'monospace', color: 'rgba(15,30,60,0.3)', fontSize: 11 }}>{i + 1}</td>
+                  <td style={{ padding: '10px', fontWeight: 500, color: '#0F1E3C' }}>
                     {fund.name}
                     {fund.isCurrent && (
-                      <span className="ml-2 text-[10px] bg-teal/10 text-teal-800 px-1.5 py-0.5 rounded font-semibold">YOUR FUND</span>
+                      <span style={{ marginLeft: 8, fontSize: 10, background: 'rgba(0,212,170,0.1)', color: '#065F46', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>YOUR FUND</span>
                     )}
                   </td>
-                  <td className="py-3 text-navy/50 text-xs">{fund.type}</td>
-                  <td className={`py-3 text-right font-mono font-medium ${fund.ret7 >= 8.5 ? 'text-teal' : fund.ret7 >= 7.5 ? 'text-navy' : 'text-amber-600'}`}>
-                    {fund.ret7}%
-                  </td>
-                  <td className={`py-3 text-right font-mono ${fund.fee <= 0.50 ? 'text-teal' : fund.fee <= 0.80 ? 'text-navy' : 'text-red-600 font-medium'}`}>
-                    {fund.fee}%
-                  </td>
-                  <td className={`py-3 text-right font-mono ${fund.fee <= 0.50 ? 'text-teal' : fund.fee <= 0.80 ? 'text-navy' : 'text-red-600 font-medium'}`}>
-                    {fmt(fund.fee / 100 * balance)}/yr
-                  </td>
-                  <td className="py-3 pr-2 text-right">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${fund.apra === 'passed' ? 'bg-teal/10 text-teal-800' : 'bg-red-50 text-red-700'}`}>
+                  <td style={{ padding: '10px', color: 'rgba(15,30,60,0.5)', fontSize: 11 }}>{fund.type}</td>
+                  <td style={{ padding: '10px', fontFamily: 'monospace', textAlign: 'right', fontWeight: 500, color: fund.ret7 >= 8.5 ? '#00D4AA' : fund.ret7 >= 7.5 ? '#0F1E3C' : '#D97706' }}>{fund.ret7}%</td>
+                  <td style={{ padding: '10px', fontFamily: 'monospace', textAlign: 'right', color: fund.fee <= 0.50 ? '#00D4AA' : fund.fee <= 0.80 ? '#0F1E3C' : '#EF4444', fontWeight: fund.fee > 0.80 ? 500 : 400 }}>{fund.fee}%</td>
+                  <td style={{ padding: '10px', fontFamily: 'monospace', textAlign: 'right', color: fund.fee <= 0.50 ? '#00D4AA' : fund.fee <= 0.80 ? '#0F1E3C' : '#EF4444' }}>{fmt(fund.fee / 100 * balance)}/yr</td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+                      background: fund.apra === 'passed' ? 'rgba(0,212,170,0.1)' : '#FEF2F2',
+                      color: fund.apra === 'passed' ? '#065F46' : '#991B1B',
+                    }}>
                       {fund.apra === 'passed' ? '✓ Passed' : '✗ Failed'}
                     </span>
                   </td>
@@ -111,10 +120,11 @@ export function FundsClient() {
             </tbody>
           </table>
         </div>
-      </Card>
-      <p className="text-xs text-navy/40 bg-navy/4 border border-navy/8 rounded-xl px-4 py-3">
+      </div>
+
+      <div style={{ background: 'rgba(15,30,60,0.04)', border: '1px solid rgba(15,30,60,0.08)', borderRadius: 12, padding: '12px 16px', marginTop: 16, fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
         Fund return and fee data sourced from publicly available APRA and fund disclosure statements as at June 2026. Returns are after investment fees and tax. Past performance is not a reliable indicator of future performance. This comparison does not constitute a recommendation to switch funds.
-      </p>
+      </div>
     </div>
   )
 }
