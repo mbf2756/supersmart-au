@@ -9,15 +9,19 @@ export function DashboardTopbar({ title, subtitle }: { title: string; subtitle?:
         {subtitle && <p className="text-xs mt-0.5" style={{ color: 'rgba(15,30,60,0.5)' }}>{subtitle}</p>}
       </div>
       <div className="flex gap-2.5">
-        <Link href="/settings"
+        <Link
+          href="/settings"
           className="px-3.5 py-2 rounded-xl text-xs font-medium transition-colors"
-          style={{ border: '1px solid rgba(15,30,60,0.1)', color: 'rgba(15,30,60,0.6)' }}>
+          style={{ border: '1px solid rgba(15,30,60,0.1)', color: 'rgba(15,30,60,0.6)' }}
+        >
           Edit profile
         </Link>
-        <Link href="/pricing"
+        <Link
+          href="/pricing"
           className="px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors"
-          style={{ background: '#00D4AA', color: '#0F1E3C' }}>
-          Upgrade to Optimiser
+          style={{ background: '#00D4AA', color: '#0F1E3C' }}
+        >
+          Upgrade →
         </Link>
       </div>
     </div>
