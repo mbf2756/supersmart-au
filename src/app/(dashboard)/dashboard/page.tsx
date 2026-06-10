@@ -18,6 +18,7 @@ export default async function DashboardPage() {
     supabase.from('subscriptions').select('*').eq('user_id', user.id).single(),
   ])
 
+  // If profile hasn't been set up yet (no salary entered), send to settings first
   const profileIsEmpty = !superProfile?.salary || superProfile.salary === 80000 && superProfile.current_balance === 0
 
   return (
