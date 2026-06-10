@@ -2,11 +2,13 @@
 import { useState, useMemo } from 'react'
 import { calcDiv296Exposure, yearsToThreshold, projectBalance, fmt, DIV296_THRESHOLD } from '@/lib/calculations'
 
-export function Div296Client() {
-  const [balance, setBalance] = useState(287450)
-  const [annualContrib, setAnnualContrib] = useState(30000)
+export function Div296Client({ superProfile: sp }: { superProfile: any }) {
+  const [balance, setBalance] = useState(sp?.current_balance ?? 0)
+  const [annualContrib, setAnnualContrib] = useState(
+    sp ? Math.round((sp.salary ?? 0) * ((sp.employer_sg_rate ?? 12) / 100)) : 0
+  )
   const [returnRate, setReturnRate] = useState(7)
-  const [age, setAge] = useState(46)
+  const [age, setAge] = useState(sp?.age ?? 40)
 
   const proj65 = useMemo(() => projectBalance(balance, annualContrib, returnRate / 100, Math.max(0, 65 - age)), [balance, annualContrib, returnRate, age])
   const yrsToThresh = useMemo(() => yearsToThreshold(balance, annualContrib, returnRate / 100, DIV296_THRESHOLD), [balance, annualContrib, returnRate])
