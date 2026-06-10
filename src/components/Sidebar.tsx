@@ -10,13 +10,13 @@ const NAV = [
     { href: '/contributions', label: 'Contributions', icon: '↑', badge: '3' },
     { href: '/fees', label: 'Fee analyser', icon: '$' },
     { href: '/funds', label: 'Fund compare', icon: '≡' },
+    { href: '/portfolios', label: 'ETF portfolios', icon: '📈' },
   ]},
   { group: 'Retirement', items: [
     { href: '/div296', label: 'Div 296 exposure', icon: '⚠', badge: '!' },
     { href: '/salary', label: 'Salary sacrifice', icon: '⇄' },
     { href: '/spouse', label: 'Spouse analysis', icon: '◑' },
     { href: '/smsf', label: 'SMSF analytics', icon: '◈' },
-    { href: '/portfolios', label: 'ETF portfolios', icon: '📈' },
   ]},
 ]
 
