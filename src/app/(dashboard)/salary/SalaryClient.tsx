@@ -2,10 +2,10 @@
 import { useState, useMemo } from 'react'
 import { calcSalarySacrificeSaving, getMarginalRate, calcConcessionalCap, fmt } from '@/lib/calculations'
 
-export function SalaryClient() {
-  const [salary, setSalary] = useState(135000)
+export function SalaryClient({ superProfile: sp }: { superProfile: any }) {
+  const [salary, setSalary] = useState(sp?.salary ?? 0)
   const [monthly, setMonthly] = useState(500)
-  const [sgRate, setSgRate] = useState(12)
+  const [sgRate, setSgRate] = useState(sp?.employer_sg_rate ?? 12)
 
   const result = useMemo(() => calcSalarySacrificeSaving(salary, monthly), [salary, monthly])
   const capInfo = useMemo(() => calcConcessionalCap(salary, sgRate, monthly * 12), [salary, sgRate, monthly])
