@@ -3,13 +3,13 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'SuperSmart AU — Independent Super Optimisation',
-    template: '%s | SuperSmart AU',
+    default: 'SmartSuper AU — Independent Super Optimisation',
+    template: '%s | SmartSuper AU',
   },
   description: 'Australia\'s only independent superannuation optimisation platform. Free super health score, carry-forward tracker, fee analyser, Division 296 modeller and more. General information only — not financial advice.',
   keywords: ['superannuation', 'super', 'salary sacrifice', 'division 296', 'carry forward super', 'super fee calculator', 'SMSF'],
   openGraph: {
-    siteName: 'SuperSmart AU',
+    siteName: 'SmartSuper AU',
     type: 'website',
     locale: 'en_AU',
   },
