@@ -1,5 +1,6 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { calcFeeDrag, fmt, fmtShort } from '@/lib/calculations'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -376,6 +377,38 @@ const ALLOC_INFO: Record<string, { growth: string; defensive: string; desc: stri
 
 export function FundsClient({ superProfile: sp }: { superProfile: any }) {
   const [showAll, setShowAll]       = useState(false)
+  // Live returns from Supabase fund_returns table
+  const [liveReturns, setLiveReturns] = useState<Record<string, {ret1?:number|null;ret3?:number|null;ret5?:number|null;ret10?:number|null}>>({})
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('fund_returns')
+      .select('fund_name,option_name,ret_1yr,ret_3yr,ret_5yr,ret_10yr')
+      .order('verified_at', { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        const map: Record<string, {ret1?:number|null;ret3?:number|null;ret5?:number|null;ret10?:number|null}> = {}
+        data.forEach(r => {
+          const key = `${r.fund_name}||${r.option_name}`
+          if (!map[key]) {
+            map[key] = { ret1: r.ret_1yr, ret3: r.ret_3yr, ret5: r.ret_5yr, ret10: r.ret_10yr }
+          }
+        })
+        setLiveReturns(map)
+      })
+  }, [])
+
+  // Merge live returns with static data — live data takes priority
+  function getLiveReturn(fund: string, option: string): {ret1?:number|null;ret3?:number|null;ret5?:number|null;ret10?:number|null} {
+    const exact = liveReturns[`${fund}||${option}`]
+    if (exact) return exact
+    // Fuzzy fallback: match first word of fund
+    const fuzzyKey = Object.keys(liveReturns).find(k => 
+      k.toLowerCase().startsWith(fund.toLowerCase().split(' ')[0].toLowerCase())
+    )
+    return fuzzyKey ? liveReturns[fuzzyKey] : {}
+  }
   const [activeTab, setActiveTab]   = useState<'comparison' | 'education' | 'research'>('comparison')
 
   const userFundName: string  = sp?.fund_name ?? ''
@@ -416,7 +449,26 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
   const bestFeePeer   = userBalance > 0
     ? [...validPeers].sort((a, b) => effectiveFeeRate(a, userBalance) - effectiveFeeRate(b, userBalance))[0]
     : peers.reduce((a, b) => a.fee < b.fee ? a : b, peers[0])
-  const bestRetPeers  = peers.filter(p => p.ret10 !== null).sort((a, b) => (b.ret10 ?? 0) - (a.ret10 ?? 0))
+  // Get effective return for each peer — live DB data takes priority over static
+  function effectiveRet1(p: FundOption): number | null {
+    const live = getLiveReturn(p.fund, p.option)
+    return (live.ret1 != null ? live.ret1 : p.ret1) ?? null
+  }
+  function effectiveRet3(p: FundOption): number | null {
+    const live = getLiveReturn(p.fund, p.option)
+    return (live.ret3 != null ? live.ret3 : null) ?? null
+  }
+  function effectiveRet5(p: FundOption): number | null {
+    const live = getLiveReturn(p.fund, p.option)
+    return (live.ret5 != null ? live.ret5 : p.ret5) ?? null
+  }
+  function effectiveRet10(p: FundOption): number | null {
+    const live = getLiveReturn(p.fund, p.option)
+    return (live.ret10 != null ? live.ret10 : p.ret10) ?? null
+  }
+
+  const bestRetPeers  = peers.filter(p => effectiveRet1(p) !== null || effectiveRet10(p) !== null)
+    .sort((a, b) => ((effectiveRet1(b) ?? effectiveRet10(b) ?? 0) - (effectiveRet1(a) ?? effectiveRet10(a) ?? 0)))
   const bestRetPeer   = bestRetPeers[0]
   const bestNetPeer   = peers.filter(p => p.fee > 0 && p.ret10 !== null)
     .sort((a, b) => ((b.ret10 ?? 0) - b.fee) - ((a.ret10 ?? 0) - a.fee))[0]
@@ -557,12 +609,21 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
             {bestRetPeer ? (<>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#0F1E3C', marginBottom: 2 }}>{bestRetPeer.fund}</div>
               <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.6)', marginBottom: 10 }}>{bestRetPeer.option}</div>
-              <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 500, color: '#534AB7' }}>{((bestRetPeer.ret10 ?? 0) * 100).toFixed(1)}% p.a.</div>
-              <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginTop: 2 }}>
-                {userFundInPeers?.ret10
-                  ? `vs your fund's ${(userFundInPeers.ret10 * 100).toFixed(1)}% — ${(((bestRetPeer.ret10 ?? 0) - userFundInPeers.ret10) * 100).toFixed(1)}% gap`
-                  : '10-year net return to 30 Jun 2025'}
-              </div>
+              {(() => {
+                const br1 = effectiveRet1(bestRetPeer)
+                const br5 = effectiveRet5(bestRetPeer)
+                const uf1 = userFundInPeers ? effectiveRet1(userFundInPeers as FundOption) : null
+                const val = br1 ?? br5
+                const label = br1 ? '1yr FY25' : '5yr p.a.'
+                return (<>
+                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 500, color: '#534AB7' }}>
+                    {val ? `${val.toFixed(1)}%` : '—'} <span style={{ fontSize: 12, fontWeight: 400 }}>{label}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginTop: 2 }}>
+                    {uf1 && val ? `vs your fund ${uf1.toFixed(1)}% — ${(val - uf1).toFixed(1)}% gap` : 'Net return to 30 Jun 2025'}
+                  </div>
+                </>)
+              })()}
             </>) : (
               <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)' }}>Insufficient 10yr data for this category — check fund website for historical returns.</div>
             )}
@@ -632,7 +693,7 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
                     { l: 'Type', a: 'left' }, { l: 'Invest fee', a: 'right' },
                     { l: `Admin/yr (${fmtShort(userBalance)})`, a: 'right' },
                     { l: `Total/yr (${fmtShort(userBalance)})`, a: 'right' },
-                    { l: '1yr FY25', a: 'right' }, { l: '10yr', a: 'right' },
+                    { l: '1yr', a: 'right' }, { l: '3yr', a: 'right' }, { l: '5yr', a: 'right' },
                     { l: 'ESG', a: 'center' }, { l: 'APRA', a: 'right' },
                   ].map(h => (
                     <th key={h.l} style={{ textAlign: h.a as any, padding: '6px 8px', fontSize: 10, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h.l}</th>
@@ -690,12 +751,22 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
                         {!isUser && userTotal > 0 && saving > 50 && <div style={{ fontSize: 10, color: '#059669' }}>save {fmt(saving)}/yr</div>}
                         {!isUser && userTotal > 0 && saving < -50 && <div style={{ fontSize: 10, color: '#EF4444' }}>+{fmt(-saving)}/yr</div>}
                       </td>
-                      <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: fund.ret1 ? (fund.ret1 >= 0.12 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>
-                        {fund.ret1 ? `${(fund.ret1 * 100).toFixed(1)}%` : '—'}
-                      </td>
-                      <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: fund.ret10 ? (fund.ret10 >= 0.09 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>
-                        {fund.ret10 ? `${(fund.ret10 * 100).toFixed(1)}%` : '—'}
-                      </td>
+                      {(() => {
+                        const r1  = effectiveRet1(fund as FundOption)
+                        const r3  = effectiveRet3(fund as FundOption)
+                        const r5  = effectiveRet5(fund as FundOption)
+                        return (<>
+                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: r1 ? (r1 >= 12 ? '#00D4AA' : r1 >= 8 ? '#0F1E3C' : '#D97706') : 'rgba(15,30,60,0.3)' }}>
+                            {r1 ? `${r1.toFixed(1)}%` : '—'}
+                          </td>
+                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: r3 ? (r3 >= 8 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>
+                            {r3 ? `${r3.toFixed(1)}%` : '—'}
+                          </td>
+                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', textAlign: 'right', color: r5 ? (r5 >= 8 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>
+                            {r5 ? `${r5.toFixed(1)}%` : '—'}
+                          </td>
+                        </>)
+                      })()}
                       <td style={{ padding: '9px 8px', textAlign: 'center', fontSize: 12 }}>
                         {hasESG ? <span style={{ color: '#065F46' }}>✓</span> : partialESG ? <span style={{ color: '#D97706' }}>~</span> : <span style={{ color: 'rgba(15,30,60,0.25)' }}>—</span>}
                       </td>
@@ -923,7 +994,7 @@ export function FundsClient({ superProfile: sp }: { superProfile: any }) {
         <strong>Vanguard Super</strong> PDS Jun 2025 (vanguard.com.au).{' '}
         For Hostplus active options: invest fees shown <em>exclude</em> performance fees (variable; historically up to 0.37–0.41% p.a. additional — see fund PDS for details).{' '}
         Vanguard invest fee (0.21%) excludes admin fee (0.33% capped $840/yr) — total at balances under $255k is 0.54% p.a.{' '}
-        Returns are net of investment fees and tax, sourced from SuperRatings crediting rate data to 30 June 2025.{' '}
+        Returns (1yr, 3yr, 5yr) are sourced directly from each fund's published investment performance pages and stored in the SmartSuper AU database — net of investment fees and tax to 30 June 2025. Returns are updated periodically; always verify on your fund's website for the latest figures.{' '}
         Fees change annually — always verify in your fund's current PDS before making any decision.{' '}
         General information only. This comparison does not constitute financial advice. Past performance is not a reliable indicator of future returns.{' '}
         Before switching funds consider exit fees, insurance implications, and seek advice from a licensed financial adviser.
