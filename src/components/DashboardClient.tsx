@@ -194,6 +194,9 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
       age: sp.age ?? 40,
       hasCarryForwardUnused: true,
       accountCount: sp.account_count ?? 1,
+      salary: sp.salary ?? 80000,
+      makingVoluntaryContribs: false,
+      netReturnRank: 'mid',
     })
   }, [sp, profileIsEmpty])
 
@@ -230,7 +233,7 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
   const arcLen = 251.3
   const arcOffset = score ? arcLen - (arcLen * score.total / 100) : arcLen
   const gaugeColor = score
-    ? score.total >= 80 ? '#00D4AA' : score.total >= 60 ? '#F59E0B' : '#EF4444'
+    ? score.total >= 80 ? '#00D4AA' : score.total >= 65 ? '#F59E0B' : score.total >= 45 ? '#F97316' : '#EF4444'
     : '#ccc'
 
   if (profileIsEmpty || !sp) {
@@ -343,14 +346,14 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
           </div>
           <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.4)', marginTop: 2 }}>out of 100</div>
           <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 20, letterSpacing: '0.06em',
-            background: score?.total >= 80 ? 'rgba(0,212,170,0.1)' : score?.total >= 60 ? '#FFFBEB' : '#FEF2F2',
-            color: score?.total >= 80 ? '#065F46' : score?.total >= 60 ? '#92400E' : '#991B1B',
+            background: score?.total >= 80 ? 'rgba(0,212,170,0.1)' : score?.total >= 65 ? '#FFFBEB' : score?.total >= 45 ? 'rgba(249,115,22,0.1)' : '#FEF2F2',
+            color: score?.total >= 80 ? '#065F46' : score?.total >= 65 ? '#92400E' : score?.total >= 45 ? '#9A3412' : '#991B1B',
           }}>
             {score?.label ?? '—'}
           </div>
           <div style={{ marginTop: 16, fontSize: 11, color: 'rgba(15,30,60,0.4)', textAlign: 'center', lineHeight: 1.6 }}>
             Better than <strong style={{ color: '#0F1E3C' }}>
-              {score?.total >= 80 ? '82%' : score?.total >= 60 ? '58%' : '35%'}
+              {score?.total >= 80 ? '85%' : score?.total >= 65 ? '65%' : score?.total >= 45 ? '42%' : '18%'}
             </strong> of Australian super members
           </div>
         </div>
@@ -383,7 +386,7 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
                   <div style={{
                     height: '100%', borderRadius: 3, transition: 'width 0.6s ease',
                     width: `${(item.score / item.maxScore) * 100}%`,
-                    background: item.status === 'good' ? '#00D4AA' : item.status === 'ok' ? '#F59E0B' : '#EF4444',
+                    background: item.status === 'good' ? '#00D4AA' : item.status === 'ok' ? '#F97316' : '#EF4444',
                   }} />
                 </div>
                 <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, width: 40, textAlign: 'right',
