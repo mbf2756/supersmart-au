@@ -182,55 +182,51 @@ export default function PricingPage() {
     }
     setCheckingCoupon(false)
   }
-
-  async function applyCoupon() {
-    const code = couponInput.trim().toUpperCase()
-    if (!code) return
-    setCheckingCoupon(true)
-    setCouponError('')
-    try {
-      const res = await fetch('/api/stripe/validate-coupon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      })
-      const data = await res.json()
-      if (data.valid) {
-        setAppliedCoupon({ code, label: data.label, description: data.description })
-        setCouponError('')
-      } else {
-        setCouponError(data.error || 'Invalid coupon code.')
-        setAppliedCoupon(null)
-      }
-    } catch {
-      setCouponError('Could not validate coupon. Please try again.')
-    }
-    setCheckingCoupon(false)
-  }
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  async function handleUpgrade(couponCode?: string) {
+  async function handleUpgrade() {
     setLoading(true)
     setCouponError('')
     try {
       const res = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'optimiser', couponCode: couponCode || appliedCoupon?.code }),
+        // Only send coupon code if user explicitly applied one
+        body: JSON.stringify({
+          plan: 'optimiser',
+          couponCode: appliedCoupon?.code ?? null,
+        }),
       })
+      if (res.status === 401) {
+        router.push('/login?redirectTo=/pricing')
+        return
+      }
+      if (res.status === 503) {
+        // Stripe not configured yet — show friendly message, not coupon error
+        alert('Payments are not yet live. Please contact support@smartsuperau.com to arrange access.')
+        setLoading(false)
+        return
+      }
       const { url, error: apiError } = await res.json()
       if (apiError === 'Unauthorised') {
         router.push('/login?redirectTo=/pricing')
         return
       }
       if (apiError) {
-        setCouponError(apiError)
+        // Only show coupon error if it's coupon-related
+        if (apiError.toLowerCase().includes('coupon')) {
+          setCouponError(apiError)
+        } else {
+          alert(apiError)
+        }
         setLoading(false)
         return
       }
-      window.location.href = url
+      if (url) {
+        window.location.href = url
+      }
     } catch {
-      setCouponError('Something went wrong. Please try again.')
+      alert('Something went wrong connecting to payments. Please try again or contact support@smartsuperau.com.')
       setLoading(false)
     }
   }
