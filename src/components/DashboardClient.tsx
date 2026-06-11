@@ -196,7 +196,18 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
       accountCount: sp.account_count ?? 1,
       salary: sp.salary ?? 80000,
       makingVoluntaryContribs: false,
-      netReturnRank: 'mid',
+      // Derive return rank from fund/option — top quartile funds per SuperRatings to Jun 2025
+      netReturnRank: (() => {
+        const fn = (sp?.fund_name ?? '').toLowerCase()
+        const fo = (sp?.fund_option ?? '').toLowerCase()
+        // Top quartile: UniSuper, ART High Growth, Hostplus (over 10yr)
+        if (fn.includes('unisuper')) return 'top'
+        if (fn.includes('australian retirement') && fo.includes('high growth')) return 'top'
+        if (fn.includes('hostplus') && fo.includes('indexed')) return 'top'
+        // Bottom quartile: retail funds, failed APRA
+        if (fn.includes('bt super') || fn.includes('mlc') || fn.includes('amp') || fn.includes('colonial')) return 'bottom'
+        return 'mid'
+      })(),
     })
   }, [sp, profileIsEmpty])
 
@@ -204,7 +215,16 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
   const annualContrib = (sp?.salary ?? 0) * ((sp?.employer_sg_rate ?? 12) / 100)
   const balance = sp?.current_balance ?? 0
   const feePct = sp?.fund_fee_pct ?? 0
-  const bestFeePct = feePct > 0.10 ? 0.04 : feePct  // best indexed equiv
+  // Best fee in user's category — matched to verified PDS data
+  const bestFeePct = useMemo(() => {
+    const opt = (sp?.fund_option ?? '').toLowerCase()
+    if (opt.includes('indexed share') || opt.includes('indexed global')) return 0.02   // Hostplus Indexed Shares
+    if (opt.includes('indexed')) return 0.04                                           // Hostplus Indexed Balanced
+    if (opt.includes('high growth') || opt.includes('highgrowth')) return 0.04        // Hostplus Indexed High Growth
+    if (opt.includes('growth') && !opt.includes('balanced') && !opt.includes('conservative')) return 0.43  // UniSuper Growth
+    if (opt.includes('conservative') || opt.includes('stable')) return 0.37           // UniSuper Conservative Balanced
+    return 0.41  // UniSuper Balanced — best active balanced option
+  }, [sp?.fund_option])
 
   const projBalance = useMemo(() => projectBalance(balance, annualContrib, 0.07 - feePct / 100, yrs), [balance, annualContrib, feePct, yrs])
   const projBest    = useMemo(() => projectBalance(balance, annualContrib, 0.07 - bestFeePct / 100, yrs), [balance, annualContrib, bestFeePct, yrs])
