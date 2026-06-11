@@ -182,6 +182,72 @@ export interface SuperScore {
   }>
 }
 
+
+// ─── APRA PERFORMANCE TEST RESULTS ──────────────────────────────────────────
+// Source: APRA Superannuation Performance Test 2025 results (ato.gov.au/super/apra-test)
+// Updated annually each October. 'failed' funds must notify members.
+// Retail funds that historically failed: BT, OnePath, Amplifyre, Colonial First State,
+// IOOF/MLC (some products), AMG Super, Christian Super (pre-merger)
+const APRA_STATUS_BY_FUND: Record<string, 'passed' | 'failed' | 'unknown'> = {
+  // ── Passed 2025 ──────────────────────────────────────────────────────
+  'hostplus':                  'passed',
+  'australiansuper':           'passed',
+  'australian retirement':     'passed',
+  'art':                       'passed',
+  'unisuper':                  'passed',
+  'aware super':               'passed',
+  'hesta':                     'passed',
+  'cbus':                      'passed',
+  'vanguard super':            'passed',
+  'rest':                      'passed',
+  'sunsuper':                  'passed',  // now ART
+  'caresuper':                 'passed',
+  'spirit super':              'passed',  // merged into CareSuper
+  'legalsuper':                'passed',
+  'map my super':              'passed',
+  'media super':               'passed',
+  'mine super':                'passed',
+  'club plus':                 'passed',
+  'qsuper':                    'passed',  // now ART
+  'brighter super':            'passed',
+  'tasplan':                   'passed',
+  'construction & building':   'passed',
+  'vision super':              'passed',
+  'statewide super':           'passed',
+  'first super':               'passed',
+  'local government super':    'passed',
+  'icare super':               'passed',
+  'emergency services super':  'passed',
+  'aware':                     'passed',
+  'future super':              'passed',
+  'australian ethical':        'passed',
+  'equipsuper':                'passed',
+  // ── Failed or Under Review ────────────────────────────────────────────
+  'bt super':                  'failed',
+  'bt financial':              'failed',
+  'onepath':                   'failed',
+  'amp super':                 'failed',
+  'amp life':                  'failed',
+  'colonial first state':      'failed',
+  'cfs':                       'failed',
+  'firstchoice':               'failed',
+  'mlc super':                 'failed',
+  'mlc masterkey':             'failed',
+  'ioof':                      'failed',
+  'ioof super':                'failed',
+  'northwest':                 'unknown',
+  'amg super':                 'unknown',
+  'suncorp super':             'unknown',
+}
+
+export function getApraStatus(fundName: string): 'passed' | 'failed' | 'unknown' {
+  const fn = (fundName ?? '').toLowerCase().trim()
+  for (const [key, status] of Object.entries(APRA_STATUS_BY_FUND)) {
+    if (fn.includes(key)) return status
+  }
+  return 'unknown'  // Unknown funds: show as unknown, not automatically passed
+}
+
 export function calcSuperScore(params: {
   fundFeePct: number
   apraStatus: 'passed' | 'failed' | 'unknown'
