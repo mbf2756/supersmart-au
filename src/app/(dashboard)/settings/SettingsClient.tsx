@@ -243,6 +243,9 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     employer_sg_rate: sp?.employer_sg_rate ?? 12,
     target_retirement_age: sp?.target_retirement_age ?? 65,
     account_count: sp?.account_count ?? 1,
+    making_voluntary_contribs: sp?.making_voluntary_contribs ?? false,
+    carry_forward_balance: sp?.carry_forward_balance ?? null,
+    personal_contribs_ytd: sp?.personal_contribs_ytd ?? 0,
 
   })
 
@@ -292,6 +295,9 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
             employer_sg_rate: form.employer_sg_rate,
             target_retirement_age: form.target_retirement_age,
             account_count: form.account_count,
+            making_voluntary_contribs: form.making_voluntary_contribs,
+            carry_forward_balance: form.carry_forward_balance,
+            personal_contribs_ytd: form.personal_contribs_ytd,
 
           }
         : { ...form, fund_name: fundSearch || form.fund_name, user_id: user.id }
@@ -589,6 +595,85 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
             )}
           </div>
 
+        </div>
+
+
+        {/* ── CONTRIBUTION BEHAVIOUR FIELDS ─────────────────────────────── */}
+        <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(15,30,60,0.08)' }}>
+          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>Contribution behaviour</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+            {/* Are you making voluntary contributions? */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px', background: 'rgba(15,30,60,0.03)', borderRadius: 12, border: '1px solid rgba(15,30,60,0.08)' }}>
+                <input
+                  type="checkbox"
+                  id="makingVoluntary"
+                  checked={form.making_voluntary_contribs ?? false}
+                  onChange={e => set('making_voluntary_contribs', e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: '#00D4AA', marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+                />
+                <label htmlFor="makingVoluntary" style={{ cursor: 'pointer', flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: '#0F1E3C', marginBottom: 3 }}>
+                    I am making voluntary contributions above the employer SG
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', lineHeight: 1.6 }}>
+                    Tick this if you are salary sacrificing or making personal deductible contributions. This improves your health score accuracy — it tells us you are actively optimising your contributions strategy.
+                  </div>
+                </label>
+                {form.making_voluntary_contribs && (
+                  <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, background: 'rgba(0,212,170,0.1)', color: '#065F46', fontWeight: 600, flexShrink: 0 }}>+6 pts</span>
+                )}
+              </div>
+            </div>
+
+            {/* Carry-forward balance */}
+            <div>
+              <div style={labelStyle}>
+                Unused carry-forward cap (optional)
+                <Hint>
+                  Your accumulated unused concessional contributions from the past 5 financial years, visible on MyGov → ATO → Super → Carry-forward concessional contributions.
+                  Leave blank if unknown — the contributions page will show the maximum theoretical amount instead.
+                </Hint>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={prefix}>$</span>
+                <input
+                  type="number"
+                  value={form.carry_forward_balance ?? ''}
+                  onChange={e => set('carry_forward_balance', e.target.value === '' ? null : +e.target.value)}
+                  placeholder="e.g. 27500"
+                  style={{ ...monoInput, paddingLeft: 28 }}
+                />
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>
+                Check MyGov → ATO → Super → Carry-forward contributions
+              </div>
+            </div>
+
+            {/* Personal (after-tax) contributions YTD */}
+            <div>
+              <div style={labelStyle}>
+                Personal after-tax contributions this year (optional)
+                <Hint>
+                  Non-concessional (after-tax) contributions you have made this financial year. Used to accurately calculate your bring-forward rule eligibility. Check your fund&apos;s transaction history or ATO MyGov. Leave blank if you haven&apos;t made any.
+                </Hint>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={prefix}>$</span>
+                <input
+                  type="number"
+                  value={form.personal_contribs_ytd ?? 0}
+                  onChange={e => set('personal_contribs_ytd', +e.target.value)}
+                  style={{ ...monoInput, paddingLeft: 28 }}
+                />
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>
+                Non-concessional annual cap: $120,000 (rising to $130,000 from 1 Jul 2026)
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* Spouse upsell */}
