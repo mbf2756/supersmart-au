@@ -170,7 +170,7 @@ export function calcSpouseOffset(
 
 export interface SuperScore {
   total: number
-  grade: 'excellent' | 'good' | 'needs-attention' | 'poor'
+  grade: 'excellent' | 'good' | 'fair' | 'needs-work' | 'poor'
   label: string
   breakdown: Array<{
     key: string
@@ -189,51 +189,187 @@ export function calcSuperScore(params: {
   age: number
   hasCarryForwardUnused: boolean
   accountCount: number
+  salary?: number
+  makingVoluntaryContribs?: boolean
+  netReturnRank?: 'top' | 'mid' | 'bottom' | 'unknown'
 }): SuperScore {
-  const breakdown = [
-    {
-      key: 'performance',
-      label: 'Fund performance',
-      sublabel: params.apraStatus === 'passed' ? 'Passed 2025 APRA benchmark test' : 'Failed or unknown APRA status',
-      score: params.apraStatus === 'passed' ? 20 : params.apraStatus === 'failed' ? 5 : 12,
-      maxScore: 20,
-      status: (params.apraStatus === 'passed' ? 'good' : params.apraStatus === 'failed' ? 'bad' : 'ok') as 'good' | 'ok' | 'bad',
-    },
+  const {
+    fundFeePct, apraStatus, investmentOption, age,
+    hasCarryForwardUnused, accountCount,
+    salary = 80000,
+    makingVoluntaryContribs = false,
+    netReturnRank = 'mid',
+  } = params
+
+  const yrsToRetire = Math.max(1, 65 - age)
+  const opt = investmentOption.toLowerCase()
+  const isIndexed     = opt.includes('indexed') || opt.includes('index ')
+  const isHighGrowth  = opt.includes('high growth') || opt.includes('highgrowth')
+  const isConservative = opt.includes('conservative') || opt.includes('capital stable') || opt.includes('stable')
+  const isCash        = opt.includes('cash')
+
+  // ── 1. FEE EFFICIENCY /25 ────────────────────────────────────────────────
+  // Score relative to best available fee in user's option category.
+  // Rewards genuinely optimised options. Penalises relative overpaying.
+  const bestAvailable = isIndexed ? 0.04 : isHighGrowth ? 0.26 : 0.41
+  const feeGap = fundFeePct - bestAvailable
+  const feeScore = feeGap <= 0.02 ? 25
+    : feeGap <= 0.10 ? 20
+    : feeGap <= 0.25 ? 14
+    : feeGap <= 0.50 ? 8
+    : feeGap <= 0.80 ? 4
+    : 1
+
+  const feeGapDollars = feeGap > 0 ? Math.round(feeGap / 100 * (salary * 3)) : 0 // rough 3x salary proxy
+  const feeLabel = feeGap <= 0.02
+    ? `${fundFeePct}% — near-optimal for this category`
+    : feeGap <= 0.15
+    ? `${fundFeePct}% — paying ~${(feeGap).toFixed(2)}% above the lowest-cost equivalent`
+    : feeGap <= 0.40
+    ? `${fundFeePct}% — paying significantly more than the low-cost alternative`
+    : `${fundFeePct}% — well above the lowest-cost option in this category`
+
+  // ── 2. INVESTMENT ALIGNMENT /25 ──────────────────────────────────────────
+  // Is this option appropriate for the member's time horizon?
+  // Key insight: most Australians are in Balanced when they should be in Growth/High Growth.
+  let alignScore: number
+  let alignLabel: string
+
+  if (isCash) {
+    alignScore = yrsToRetire > 5 ? 3 : 20
+    alignLabel = yrsToRetire > 5
+      ? 'Cash — too defensive for your time horizon. Missing years of compound growth.'
+      : 'Cash — appropriate given proximity to retirement'
+  } else if (isConservative) {
+    alignScore = yrsToRetire >= 20 ? 5 : yrsToRetire >= 10 ? 10 : 22
+    alignLabel = yrsToRetire >= 20
+      ? `Conservative with ${yrsToRetire} years to go — likely costing you significant long-term growth`
+      : yrsToRetire >= 10
+      ? `Conservative with ${yrsToRetire} years to retirement — consider reviewing risk level`
+      : 'Conservative — appropriate approaching retirement'
+  } else if (isIndexed || isHighGrowth) {
+    alignScore = yrsToRetire >= 15 ? 25 : yrsToRetire >= 7 ? 20 : 12
+    alignLabel = yrsToRetire >= 15
+      ? `${investmentOption} — strong alignment with your ${yrsToRetire}-year horizon`
+      : yrsToRetire >= 7
+      ? `${investmentOption} — reasonable for your time horizon`
+      : `${investmentOption} — consider reducing risk ${yrsToRetire} years from retirement`
+  } else {
+    // Balanced / Growth
+    alignScore = yrsToRetire >= 20 ? 12 : yrsToRetire >= 10 ? 18 : 22
+    alignLabel = yrsToRetire >= 20
+      ? `Balanced with ${yrsToRetire} years ahead — research shows growth options significantly outperform over 20+ year horizons`
+      : yrsToRetire >= 10
+      ? `Balanced — reasonable, though a growth option could improve long-term returns`
+      : 'Balanced — appropriate for your time horizon'
+  }
+
+  // ── 3. CONTRIBUTION STRATEGY /20 ─────────────────────────────────────────
+  // Penalise for carry-forward unused AND for no voluntary contributions
+  let contribScore = 20
+  const contribIssues: string[] = []
+
+  if (hasCarryForwardUnused) {
+    contribScore -= 10
+    contribIssues.push('unused carry-forward cap')
+  }
+  if (!makingVoluntaryContribs && salary < 250000) {
+    contribScore -= 6
+    contribIssues.push('no salary sacrifice above SG')
+  }
+  contribScore = Math.max(2, contribScore)
+
+  const contribLabel = contribIssues.length === 0
+    ? 'Salary sacrifice active — maximising concessional contributions'
+    : contribIssues.length === 1
+    ? `${contribIssues[0].charAt(0).toUpperCase() + contribIssues[0].slice(1)} — opportunity to reduce tax`
+    : `${contribIssues.join(' + ')} — significant tax-saving opportunities not being used`
+
+  // ── 4. FUND QUALITY /15 ──────────────────────────────────────────────────
+  // APRA pass is the minimum bar — not something to celebrate with full marks
+  let qualityScore: number
+  let qualityLabel: string
+
+  if (apraStatus === 'failed') {
+    qualityScore = 3
+    qualityLabel = 'Failed 2025 APRA performance benchmark — fund must notify members'
+  } else if (netReturnRank === 'top') {
+    qualityScore = 15
+    qualityLabel = 'Passed APRA test · Top quartile 7-year net return'
+  } else if (netReturnRank === 'bottom') {
+    qualityScore = 6
+    qualityLabel = 'Passed APRA test · Below-median net return for this category'
+  } else {
+    qualityScore = 10
+    // "Passed APRA" is expected minimum, not worth celebrating with high marks
+    qualityLabel = 'Passed APRA test · Mid-table 7-year return — better options exist'
+  }
+
+  // ── 5. ACCOUNT STRUCTURE /15 ─────────────────────────────────────────────
+  const structScore = accountCount === 1 ? 15 : accountCount === 2 ? 7 : 2
+  const structLabel = accountCount === 1
+    ? 'Single account — no duplicate fees or insurance'
+    : `${accountCount} super accounts — duplicate admin fees and insurance premiums`
+
+  const breakdown: SuperScore['breakdown'] = [
     {
       key: 'fees',
-      label: 'Fund fees',
-      sublabel: `${params.fundFeePct}% p.a. — ${params.fundFeePct <= 0.40 ? 'excellent' : params.fundFeePct <= 0.65 ? 'competitive' : 'above average'}`,
-      score: params.fundFeePct <= 0.40 ? 20 : params.fundFeePct <= 0.65 ? 14 : params.fundFeePct <= 1.0 ? 9 : 4,
-      maxScore: 20,
-      status: (params.fundFeePct <= 0.65 ? 'good' : params.fundFeePct <= 1.0 ? 'ok' : 'bad') as 'good' | 'ok' | 'bad',
+      label: 'Fee efficiency',
+      sublabel: feeLabel,
+      score: feeScore,
+      maxScore: 25,
+      status: feeScore >= 20 ? 'good' : feeScore >= 12 ? 'ok' : 'bad',
     },
     {
-      key: 'option',
-      label: 'Investment option',
-      sublabel: `${params.investmentOption} — ${params.age < 50 ? 'growth focus appropriate' : 'consider reviewing for retirement'}`,
-      score: 15,
-      maxScore: 20,
-      status: 'ok' as 'good' | 'ok' | 'bad',
+      key: 'alignment',
+      label: 'Investment alignment',
+      sublabel: alignLabel,
+      score: alignScore,
+      maxScore: 25,
+      status: alignScore >= 20 ? 'good' : alignScore >= 12 ? 'ok' : 'bad',
     },
     {
       key: 'contributions',
       label: 'Contribution strategy',
-      sublabel: params.hasCarryForwardUnused ? 'Carry-forward cap available — not yet used' : 'Contributions on track',
-      score: params.hasCarryForwardUnused ? 6 : 18,
+      sublabel: contribLabel,
+      score: contribScore,
       maxScore: 20,
-      status: (params.hasCarryForwardUnused ? 'bad' : 'good') as 'good' | 'ok' | 'bad',
+      status: contribScore >= 16 ? 'good' : contribScore >= 10 ? 'ok' : 'bad',
     },
     {
-      key: 'consolidation',
-      label: 'Account consolidation',
-      sublabel: params.accountCount === 1 ? 'Single fund — no fee duplication' : `${params.accountCount} funds — consolidation recommended`,
-      score: params.accountCount === 1 ? 20 : Math.max(4, 20 - (params.accountCount - 1) * 8),
-      maxScore: 20,
-      status: (params.accountCount === 1 ? 'good' : params.accountCount === 2 ? 'ok' : 'bad') as 'good' | 'ok' | 'bad',
+      key: 'quality',
+      label: 'Fund quality',
+      sublabel: qualityLabel,
+      score: qualityScore,
+      maxScore: 15,
+      status: qualityScore >= 13 ? 'good' : qualityScore >= 8 ? 'ok' : 'bad',
+    },
+    {
+      key: 'structure',
+      label: 'Account structure',
+      sublabel: structLabel,
+      score: structScore,
+      maxScore: 15,
+      status: structScore >= 14 ? 'good' : structScore >= 8 ? 'ok' : 'bad',
     },
   ]
+
   const total = breakdown.reduce((s, b) => s + b.score, 0)
-  const grade = total >= 80 ? 'excellent' : total >= 60 ? 'good' : total >= 40 ? 'needs-attention' : 'poor'
-  const label = total >= 80 ? 'Excellent' : total >= 60 ? 'Good' : total >= 40 ? 'Needs attention' : 'Poor'
+
+  // Tighter grade bands — most people should land in Fair or Needs Work
+  const grade = total >= 80 ? 'excellent'
+    : total >= 65 ? 'good'
+    : total >= 45 ? 'fair'
+    : total >= 30 ? 'needs-work'
+    : 'poor'
+
+  const label = total >= 80 ? 'Excellent'
+    : total >= 65 ? 'Good'
+    : total >= 45 ? 'Fair'
+    : total >= 30 ? 'Needs work'
+    : 'Poor'
+
   return { total, grade, label, breakdown }
+
+
 }
