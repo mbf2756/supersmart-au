@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -32,6 +32,123 @@ const FAQ = [
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel via your account settings at any time. You\'ll retain access until the end of your billing period.' },
   { q: 'Does my spouse need a separate account?', a: 'Yes — each person\'s super is unique. A separate account gives your spouse their own personalised health score, fee analysis, and action plan.' },
 ]
+
+
+// ─── GROWTH RATE IMPACT SECTION ──────────────────────────────────────────────
+function fv(balance: number, contrib: number, rate: number, years: number): number {
+  return balance * Math.pow(1 + rate, years) + contrib * ((Math.pow(1 + rate, years) - 1) / rate)
+}
+
+function fmt(n: number): string {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(2) + 'M'
+  if (n >= 1000)    return '$' + Math.round(n / 1000) + 'k'
+  return '$' + Math.round(n).toLocaleString()
+}
+
+function GrowthImpactSection() {
+  const [balance,  setBalance]  = useState(200000)
+  const [contrib,  setContrib]  = useState(15000)
+  const [years,    setYears]    = useState(20)
+  const [baseRate, setBaseRate] = useState(7)
+
+  const atBase  = fv(balance, contrib, baseRate / 100, years)
+  const atPlus1 = fv(balance, contrib, (baseRate + 1) / 100, years)
+  const diff    = atPlus1 - atBase
+  const diffIncome = diff * 0.04
+
+  const maxFV = fv(balance, contrib, (baseRate + 1) / 100, years)
+
+  return (
+    <div style={{ background: 'white', borderRadius: 20, padding: '32px', border: '1px solid rgba(15,30,60,0.08)', marginBottom: 64 }}>
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.45)', marginBottom: 8 }}>The 1% rule — why every percentage point matters</div>
+        <div style={{ fontSize: 22, fontWeight: 600, color: '#0F1E3C' }}>
+          Just 1% more annual return on your super adds{' '}
+          <span style={{ color: '#00D4AA', fontFamily: 'monospace' }}>{fmt(diff)}</span>{' '}
+          by retirement
+        </div>
+        <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.5)', marginTop: 6 }}>
+          That's{' '}<strong style={{ color: '#0F1E3C' }}>{fmt(diffIncome)}/yr</strong>{' '}more retirement income (4% drawdown) — adjust the sliders to see your scenario
+        </div>
+      </div>
+
+      {/* Sliders */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24, marginBottom: 28, padding: '20px 24px', background: 'rgba(15,30,60,0.03)', borderRadius: 14 }}>
+        {[
+          { label: 'Current balance', value: balance, min: 10000, max: 600000, step: 10000, set: setBalance, fmt: (v: number) => '$' + (v/1000).toFixed(0) + 'k' },
+          { label: 'Annual contributions', value: contrib, min: 3000, max: 35000, step: 1000, set: setContrib, fmt: (v: number) => '$' + (v/1000).toFixed(0) + 'k/yr' },
+          { label: 'Years to retirement', value: years, min: 5, max: 35, step: 1, set: setYears, fmt: (v: number) => v + ' yrs' },
+          { label: 'Base return rate', value: baseRate, min: 4, max: 10, step: 0.5, set: setBaseRate, fmt: (v: number) => v + '% p.a.' },
+        ].map(s => (
+          <div key={s.label}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>{s.label}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: '#0F1E3C' }}>{s.fmt(s.value)}</span>
+            </div>
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
+              onChange={e => s.set(+e.target.value)}
+              style={{ width: '100%', accentColor: '#00D4AA' }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Two-bar comparison */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        {[
+          { label: `At ${baseRate}% p.a. (your fund today)`, value: atBase, color: '#534AB7', suffix: 'current strategy' },
+          { label: `At ${baseRate + 1}% p.a. (optimised)`, value: atPlus1, color: '#00D4AA', suffix: '1% improvement' },
+        ].map(bar => (
+          <div key={bar.label} style={{ background: 'rgba(15,30,60,0.03)', borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${bar.color}` }}>
+            <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginBottom: 6 }}>{bar.label}</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 30, fontWeight: 600, color: bar.color }}>{fmt(bar.value)}</div>
+            <div style={{ height: 6, background: 'rgba(15,30,60,0.08)', borderRadius: 3, marginTop: 10, overflow: 'hidden' }}>
+              <div style={{ width: `${(bar.value / maxFV) * 100}%`, height: '100%', background: bar.color, borderRadius: 3, transition: 'width 0.4s ease' }} />
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 6 }}>
+              = {fmt(bar.value * 0.04)}/yr retirement income (4% SWR)
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Gap callout */}
+      <div style={{ background: '#0F1E3C', borderRadius: 14, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            The difference over {years} years
+          </div>
+          <div style={{ fontFamily: 'monospace', fontSize: 32, fontWeight: 600, color: '#00D4AA' }}>{fmt(diff)}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+            = {fmt(diffIncome)}/yr more in retirement · = {Math.round(diff / 149).toLocaleString()}× the cost of SmartSuper AU
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>SmartSuper AU costs{' '}
+            <strong style={{ color: '#00D4AA' }}>$149/yr</strong>
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+            That's {fmt(diff / 149)}× your potential improvement
+          </div>
+        </div>
+      </div>
+
+      {/* Supporting stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
+        {[
+          { stat: '$85k+', desc: 'Extra at retirement from a 1% fee reduction over a 40-year career', src: 'MoneySmart calculator' },
+          { stat: '$8,938', desc: 'Potential tax saving from one year\'s unused carry-forward concessional cap at 32.5% marginal rate', src: 'ATO carry-forward rules' },
+          { stat: '84%', desc: 'Of active Australian super funds underperformed the market over 15 years after fees', src: 'SPIVA Scorecard Dec 2022' },
+        ].map(item => (
+          <div key={item.stat} style={{ textAlign: 'center', padding: '16px', background: 'rgba(15,30,60,0.03)', borderRadius: 12 }}>
+            <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 600, color: '#0F1E3C', marginBottom: 6 }}>{item.stat}</div>
+            <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.6)', lineHeight: 1.6, marginBottom: 4 }}>{item.desc}</div>
+            <div style={{ fontSize: 10, color: 'rgba(15,30,60,0.35)' }}>{item.src}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function PricingPage() {
   const router = useRouter()
@@ -119,31 +236,16 @@ export default function PricingPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {PAID_FEATURES.map(f => (
                 <div key={f.label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ color: f.highlight ? '#00D4AA' : 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 1, flexShrink: 0 }}>✓</span>
-                  <span style={{ fontSize: 13, lineHeight: 1.5, color: f.highlight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)', fontWeight: f.highlight ? 500 : 400 }}>{f.label}</span>
+                  <span style={{ color: '#00D4AA', fontSize: 13, marginTop: 1, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 13, lineHeight: 1.5, color: 'rgba(255,255,255,0.85)', fontWeight: f.highlight ? 600 : 400 }}>{f.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Value proof bar */}
-        <div style={{ background: 'white', borderRadius: 16, padding: '24px 32px', border: '1px solid rgba(15,30,60,0.08)', marginBottom: 64, textAlign: 'center' }}>
-          <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.5)', marginBottom: 20 }}>Why $149/year is a very easy decision</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
-            {[
-              { stat: '$85k+', desc: 'Extra at retirement from a 1% fee reduction over 40 years' },
-              { stat: '$8,938', desc: 'Potential tax saving from using expiring carry-forward cap' },
-              { stat: '84%', desc: 'Of active super funds underperform passive over 15 years' },
-              { stat: '$344/yr', desc: 'Annual fee on $430k at Hostplus Indexed Shares — SmartSuper costs less' },
-            ].map(item => (
-              <div key={item.stat}>
-                <div style={{ fontFamily: 'monospace', fontSize: 26, fontWeight: 600, color: '#0F1E3C', marginBottom: 6 }}>{item.stat}</div>
-                <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', lineHeight: 1.6 }}>{item.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Growth rate impact calculator + stats */}
+        <GrowthImpactSection />
 
         {/* FAQ */}
         <div style={{ maxWidth: 640, margin: '0 auto 48px' }}>
