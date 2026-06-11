@@ -13,9 +13,10 @@ const SUPER_FUNDS = [
     name: 'AustralianSuper',
     options: [
       { name: 'Balanced (MySuper)', fee: 0.57, type: 'active' },
-      { name: 'High Growth', fee: 0.58, type: 'active' },
+      { name: 'High Growth', fee: 0.53, type: 'active' },
       { name: 'Indexed Diversified', fee: 0.14, type: 'indexed' },
-      { name: 'Conservative Balanced', fee: 0.51, type: 'active' },
+      { name: 'Conservative Balanced', fee: 0.53, type: 'active' },
+      { name: 'Socially Aware', fee: 0.60, type: 'active' },
       { name: 'Stable', fee: 0.39, type: 'active' },
       { name: 'Cash', fee: 0.13, type: 'active' },
     ],
@@ -24,10 +25,10 @@ const SUPER_FUNDS = [
     name: 'Australian Retirement Trust (ART)',
     options: [
       { name: 'Lifecycle (default)', fee: 0.54, type: 'active' },
-      { name: 'Balanced', fee: 0.54, type: 'active' },
-      { name: 'High Growth', fee: 0.62, type: 'active' },
+      { name: 'Balanced', fee: 0.65, type: 'active' },
+      { name: 'High Growth', fee: 0.70, type: 'active' },
       { name: 'Moderate', fee: 0.48, type: 'active' },
-      { name: 'Indexed Balanced', fee: 0.16, type: 'indexed' },
+      { name: 'Indexed Balanced', fee: 0.08, type: 'indexed' },
       { name: 'Cash', fee: 0.22, type: 'active' },
     ],
   },
@@ -44,10 +45,10 @@ const SUPER_FUNDS = [
   {
     name: 'Aware Super',
     options: [
-      { name: 'High Growth (MySuper)', fee: 0.63, type: 'active' },
+      { name: 'High Growth (MySuper)', fee: 0.57, type: 'active' },
       { name: 'Growth', fee: 0.60, type: 'active' },
-      { name: 'Balanced Growth', fee: 0.57, type: 'active' },
-      { name: 'Indexed Growth', fee: 0.15, type: 'indexed' },
+      { name: 'Balanced Growth', fee: 0.50, type: 'active' },
+      { name: 'Indexed Growth', fee: 0.06, type: 'indexed' },
       { name: 'Cash', fee: 0.18, type: 'active' },
     ],
   },
@@ -56,7 +57,7 @@ const SUPER_FUNDS = [
     options: [
       { name: 'Balanced (MySuper)', fee: 0.78, type: 'active' },
       { name: 'Indexed Balanced', fee: 0.11, type: 'indexed' },
-      { name: 'Shares Plus', fee: 0.83, type: 'active' },
+      { name: 'Shares Plus', fee: 0.73, type: 'active' },
       { name: 'Indexed Shares', fee: 0.08, type: 'indexed' },
       { name: 'Conservative Balanced', fee: 0.64, type: 'active' },
       { name: 'Capital Stable', fee: 0.57, type: 'active' },
@@ -77,7 +78,7 @@ const SUPER_FUNDS = [
   {
     name: 'HESTA',
     options: [
-      { name: 'MySuper Balanced Growth', fee: 0.67, type: 'active' },
+      { name: 'MySuper Balanced Growth', fee: 0.53, type: 'active' },
       { name: 'High Growth', fee: 0.71, type: 'active' },
       { name: 'Shares Plus', fee: 0.66, type: 'active' },
       { name: 'Conservative', fee: 0.49, type: 'active' },
@@ -87,8 +88,8 @@ const SUPER_FUNDS = [
   {
     name: 'Cbus',
     options: [
-      { name: 'Growth (MySuper)', fee: 0.57, type: 'active' },
-      { name: 'High Growth', fee: 0.64, type: 'active' },
+      { name: 'Growth (MySuper)', fee: 0.56, type: 'active' },
+      { name: 'High Growth', fee: 0.60, type: 'active' },
       { name: 'Conservative Growth', fee: 0.50, type: 'active' },
       { name: 'Conservative', fee: 0.44, type: 'active' },
       { name: 'Cash', fee: 0.19, type: 'active' },
@@ -216,7 +217,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
   // ── LOCK STATE ─────────────────────────────────────────────────────────────
   // Core financial fields are locked after first real save.
-  // Preference fields (retirement age, SG rate, spouse, account count) stay editable.
+  // Preference fields (retirement age, SG rate, account count) stay editable.
   const isLocked: boolean = sp?.profile_locked === true
   const CORE_FIELDS = ['age', 'salary', 'current_balance', 'fund_name', 'fund_option', 'fund_fee_pct']
 
@@ -242,9 +243,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     employer_sg_rate: sp?.employer_sg_rate ?? 12,
     target_retirement_age: sp?.target_retirement_age ?? 65,
     account_count: sp?.account_count ?? 1,
-    has_spouse: sp?.has_spouse ?? false,
-    spouse_income: sp?.spouse_income ?? 0,
-    spouse_balance: sp?.spouse_balance ?? 0,
+
   })
 
   function set(key: string, value: unknown) {
@@ -293,9 +292,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
             employer_sg_rate: form.employer_sg_rate,
             target_retirement_age: form.target_retirement_age,
             account_count: form.account_count,
-            has_spouse: form.has_spouse,
-            spouse_income: form.spouse_income,
-            spouse_balance: form.spouse_balance,
+
           }
         : { ...form, fund_name: fundSearch || form.fund_name, user_id: user.id }
 
@@ -339,7 +336,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
             <div style={{ fontWeight: 600, color: '#0F1E3C', fontSize: 14, marginBottom: 6 }}>Core profile locked</div>
             <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.65)', lineHeight: 1.7 }}>
               Your financial details were locked when you first saved your profile. This protects your data and ensures all calculations remain accurate to you specifically.{' '}
-              <strong style={{ color: '#0F1E3C' }}>Preference fields</strong> (retirement age, SG rate, spouse details) can still be updated anytime.
+              <strong style={{ color: '#0F1E3C' }}>Preference fields</strong> (retirement age, SG rate) can still be updated anytime.
               Made a genuine error? Email <strong>support@smartsuperau.com</strong> with your registered email and we'll unlock within 24 hours.
             </div>
           </div>
@@ -594,35 +591,20 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
         </div>
 
-        {/* Spouse toggle */}
-        <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="checkbox" id="hasSpouse" checked={form.has_spouse}
-            onChange={e => set('has_spouse', e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: '#00D4AA', cursor: 'pointer' }} />
-          <label htmlFor="hasSpouse" style={{ fontSize: 14, color: 'rgba(15,30,60,0.7)', cursor: 'pointer' }}>
-            I have a spouse / partner with super
-          </label>
-        </div>
-
-        {form.has_spouse && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(15,30,60,0.08)' }}>
-            <div>
-              <div style={labelStyle}>Spouse income (annual)</div>
-              <div style={{ position: 'relative' }}>
-                <span style={prefix}>$</span>
-                <input type="number" value={form.spouse_income} onChange={e => set('spouse_income', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
-              </div>
-              <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>Used to calculate spouse contribution tax offset eligibility</div>
-            </div>
-            <div>
-              <div style={labelStyle}>Spouse super balance</div>
-              <div style={{ position: 'relative' }}>
-                <span style={prefix}>$</span>
-                <input type="number" value={form.spouse_balance} onChange={e => set('spouse_balance', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
-              </div>
+        {/* Spouse upsell */}
+        <div style={{ marginTop: 20, background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>👫 Does your spouse have super?</div>
+            <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.65)', lineHeight: 1.6 }}>
+              Each person's super is unique — different fund, different fees, different health score.
+              Create a separate account for your spouse to get their own personalised analysis, health score, and contribution strategy.
             </div>
           </div>
-        )}
+          <a href="/signup"
+            style={{ flexShrink: 0, background: '#0F1E3C', color: '#00D4AA', padding: '9px 18px', borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Create spouse account →
+          </a>
+        </div>
 
         {error && (
           <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: '#FEF2F2', color: '#991B1B', border: '1px solid rgba(232,93,93,0.2)', fontSize: 13 }}>
@@ -633,7 +615,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
         {/* PDS disclaimer */}
         <div style={{ marginTop: 20, padding: '10px 14px', background: 'rgba(15,30,60,0.04)', borderRadius: 8, fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'rgba(15,30,60,0.6)' }}>Fee accuracy note:</strong> Fees shown are indicative estimates based on fund PDSs current at June 2026. Investment fees vary by option and change annually. Always verify your exact fee in your fund's current Fees and Costs Guide or PDS. Total fees also include a flat administration fee (typically $1–2/week) not included in the % shown above.
+          <strong style={{ color: 'rgba(15,30,60,0.6)' }}>Fee accuracy note:</strong> Investment fees shown are sourced from each fund's current Product Disclosure Statement (PDS) or Fees and Costs Guide — verified June 2026. For Hostplus active options, fees shown exclude performance fees (variable, historically up to 0.37–0.41% p.a. additional). Total fees also include a flat administration fee ($52–$78/yr depending on fund) not included in the % shown. Always verify in your fund's current PDS at the fund's website before making decisions.
         </div>
 
         {/* Save */}
