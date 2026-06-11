@@ -4,20 +4,23 @@ import { calcFeeDrag, fmt, fmtShort } from '@/lib/calculations'
 
 // Best-in-category fee benchmarks (from fund PDSs, June 2026)
 // Used to auto-set the comparison fee based on the user's option type
+// Best-in-category fees verified from fund PDSs (June 2026)
+// Source: hostplus.com.au/pds (30 Sep 2025), unisuper.com.au, australianretirementtrust.com.au
 const BEST_FEE_BY_CATEGORY: Record<string, { fee: number; fund: string; option: string }> = {
-  'indexed': { fee: 0.08, fund: 'Hostplus', option: 'Indexed Shares' },
-  'balanced-active': { fee: 0.41, fund: 'UniSuper', option: 'Balanced' },
-  'high-growth': { fee: 0.43, fund: 'UniSuper', option: 'High Growth' },
-  'growth': { fee: 0.43, fund: 'UniSuper', option: 'Growth' },
-  'conservative': { fee: 0.37, fund: 'UniSuper', option: 'Conservative Balanced' },
-  'cash': { fee: 0.10, fund: 'Hostplus', option: 'Cash' },
-  'default': { fee: 0.41, fund: 'UniSuper', option: 'Balanced' },
+  'indexed':         { fee: 0.02, fund: 'Hostplus', option: 'Indexed Shares' },          // PDS: 0.02% total
+  'balanced-active': { fee: 0.41, fund: 'UniSuper', option: 'Balanced' },                 // PDS: 0.41% total
+  'high-growth':     { fee: 0.04, fund: 'Hostplus', option: 'Indexed High Growth' },      // PDS: 0.04% total
+  'growth':          { fee: 0.43, fund: 'UniSuper', option: 'Growth' },                   // PDS: 0.43% total
+  'conservative':    { fee: 0.37, fund: 'UniSuper', option: 'Conservative Balanced' },    // PDS: 0.37% total
+  'cash':            { fee: 0.01, fund: 'Hostplus', option: 'Cash' },                     // PDS: 0.01% total
+  'default':         { fee: 0.41, fund: 'UniSuper', option: 'Balanced' },
 }
 
 function detectCategory(optionName: string): string {
   const opt = (optionName ?? '').toLowerCase()
   if (opt.includes('indexed share') || opt.includes('indexed global')) return 'indexed'
-  if (opt.includes('indexed') || opt.includes('index ')) return 'balanced-active' // indexed balanced competes with active balanced
+  if (opt.includes('indexed share') || opt.includes('indexed global') || opt.includes('indexed high')) return 'indexed'
+  if (opt.includes('indexed') || opt.includes('index ')) return 'indexed' // indexed options are their own category
   if (opt.includes('high growth') || opt.includes('highgrowth')) return 'high-growth'
   if (opt.includes('growth') && !opt.includes('conservative') && !opt.includes('balanced')) return 'growth'
   if (opt.includes('conservative') || opt.includes('capital stable') || opt.includes('stable')) return 'conservative'
