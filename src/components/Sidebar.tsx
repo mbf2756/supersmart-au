@@ -126,6 +126,11 @@ export function Sidebar({ subscription }: { subscription: Subscription | null })
             </Link>
           )}
         </div>
+        <Link href="/contact"
+          className="flex items-center gap-2 text-[12px] transition-colors hover:text-white"
+          style={{ color: 'rgba(138,155,181,0.5)' }}>
+          <span style={{ fontSize: 12 }}>✉</span> Contact support
+        </Link>
         <Link href="/settings"
           className="flex items-center gap-2 text-[12px] transition-colors hover:text-white"
           style={{ color: pathname === '/settings' ? 'white' : 'rgba(138,155,181,0.6)' }}>
