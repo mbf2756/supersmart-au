@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { calcSuperScore, calcFeeDrag, projectBalance, fmt, fmtShort } from '@/lib/calculations'
+import { calcSuperScore, calcFeeDrag, projectBalance, fmt, fmtShort, getApraStatus } from '@/lib/calculations'
 import type { SuperProfile, Subscription } from '@/types'
 
 interface Props {
@@ -189,13 +189,13 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
     if (!sp || profileIsEmpty) return null
     return calcSuperScore({
       fundFeePct: sp.fund_fee_pct ?? 0.78,
-      apraStatus: 'passed',
+      apraStatus: getApraStatus(sp.fund_name ?? ''),
       investmentOption: sp.fund_option ?? 'Balanced',
       age: sp.age ?? 40,
-      hasCarryForwardUnused: true,
+      hasCarryForwardUnused: sp.making_voluntary_contribs !== true,
       accountCount: sp.account_count ?? 1,
       salary: sp.salary ?? 80000,
-      makingVoluntaryContribs: false,
+      makingVoluntaryContribs: sp.making_voluntary_contribs === true,
       // Derive return rank from fund/option — top quartile funds per SuperRatings to Jun 2025
       netReturnRank: (() => {
         const fn = (sp?.fund_name ?? '').toLowerCase()
