@@ -35,6 +35,10 @@ export function ContributionsClient({ superProfile: sp, subscription }: { superP
   const isPaid = subscription?.plan !== 'free'
   const [salary, setSalary] = useState(sp?.salary ?? 135000)
   const [sgRate, setSgRate] = useState(sp?.employer_sg_rate ?? 12)
+  const [personalContribs, setPersonalContribs] = useState(sp?.personal_contribs_ytd ?? 0)
+  const knownCarryForward: number | null = sp?.carry_forward_balance ?? null
+  const isMakingVoluntary: boolean = sp?.making_voluntary_contribs === true
+
   const [ssAmount, setSsAmount] = useState(0)
   const [tsb, setTsb] = useState(sp?.current_balance ?? 287450)
 
