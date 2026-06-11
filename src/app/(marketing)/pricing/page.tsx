@@ -155,6 +155,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(false)
   const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState('')
+  const [checkoutError, setCheckoutError] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{code: string; label: string; description: string} | null>(null)
   const [checkingCoupon, setCheckingCoupon] = useState(false)
 
@@ -187,46 +188,40 @@ export default function PricingPage() {
   async function handleUpgrade() {
     setLoading(true)
     setCouponError('')
+    setCheckoutError('')
     try {
       const res = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Only send coupon code if user explicitly applied one
         body: JSON.stringify({
           plan: 'optimiser',
           couponCode: appliedCoupon?.code ?? null,
         }),
       })
+
+      // Handle auth redirect
       if (res.status === 401) {
         router.push('/login?redirectTo=/pricing')
         return
       }
-      if (res.status === 503) {
-        // Stripe not configured yet — show friendly message, not coupon error
-        alert('Payments are not yet live. Please contact support@smartsuperau.com to arrange access.')
-        setLoading(false)
-        return
-      }
-      const { url, error: apiError } = await res.json()
-      if (apiError === 'Unauthorised') {
-        router.push('/login?redirectTo=/pricing')
-        return
-      }
-      if (apiError) {
-        // Only show coupon error if it's coupon-related
-        if (apiError.toLowerCase().includes('coupon')) {
-          setCouponError(apiError)
+
+      const data = await res.json()
+
+      if (data.error) {
+        if (data.error.toLowerCase().includes('coupon')) {
+          setCouponError(data.error)
         } else {
-          alert(apiError)
+          setCheckoutError(data.error)
         }
         setLoading(false)
         return
       }
-      if (url) {
-        window.location.href = url
+
+      if (data.url) {
+        window.location.href = data.url
       }
-    } catch {
-      alert('Something went wrong connecting to payments. Please try again or contact support@smartsuperau.com.')
+    } catch (err) {
+      setCheckoutError('Network error — please try again.')
       setLoading(false)
     }
   }
