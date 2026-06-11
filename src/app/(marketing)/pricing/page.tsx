@@ -153,20 +153,86 @@ function GrowthImpactSection() {
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [couponInput, setCouponInput] = useState('')
+  const [couponError, setCouponError] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string; label: string; description: string} | null>(null)
+  const [checkingCoupon, setCheckingCoupon] = useState(false)
+
+  async function applyCoupon() {
+    const code = couponInput.trim().toUpperCase()
+    if (!code) return
+    setCheckingCoupon(true)
+    setCouponError('')
+    try {
+      const res = await fetch('/api/stripe/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setAppliedCoupon({ code, label: data.label, description: data.description })
+        setCouponError('')
+      } else {
+        setCouponError(data.error || 'Invalid coupon code.')
+        setAppliedCoupon(null)
+      }
+    } catch {
+      setCouponError('Could not validate coupon. Please try again.')
+    }
+    setCheckingCoupon(false)
+  }
+
+  async function applyCoupon() {
+    const code = couponInput.trim().toUpperCase()
+    if (!code) return
+    setCheckingCoupon(true)
+    setCouponError('')
+    try {
+      const res = await fetch('/api/stripe/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setAppliedCoupon({ code, label: data.label, description: data.description })
+        setCouponError('')
+      } else {
+        setCouponError(data.error || 'Invalid coupon code.')
+        setAppliedCoupon(null)
+      }
+    } catch {
+      setCouponError('Could not validate coupon. Please try again.')
+    }
+    setCheckingCoupon(false)
+  }
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  async function handleUpgrade() {
+  async function handleUpgrade(couponCode?: string) {
     setLoading(true)
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_OPTIMISER_YEARLY
-    if (!priceId) { router.push('/login?redirectTo=/pricing'); return }
-    const res = await fetch('/api/stripe/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId, plan: 'optimiser' }),
-    })
-    const { url, error } = await res.json()
-    if (error) { router.push('/login?redirectTo=/pricing'); return }
-    window.location.href = url
+    setCouponError('')
+    try {
+      const res = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'optimiser', couponCode: couponCode || appliedCoupon?.code }),
+      })
+      const { url, error: apiError } = await res.json()
+      if (apiError === 'Unauthorised') {
+        router.push('/login?redirectTo=/pricing')
+        return
+      }
+      if (apiError) {
+        setCouponError(apiError)
+        setLoading(false)
+        return
+      }
+      window.location.href = url
+    } catch {
+      setCouponError('Something went wrong. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -231,8 +297,38 @@ export default function PricingPage() {
             </div>
             <button onClick={handleUpgrade} disabled={loading}
               style={{ width: '100%', padding: '11px', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', background: '#00D4AA', color: '#0F1E3C', border: 'none', marginBottom: 28, opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Loading…' : 'Start Subscriber plan'}
+              {loading ? 'Loading…' : appliedCoupon ? `Start for ${appliedCoupon.label} →` : 'Start Subscriber plan'}
             </button>
+
+            {/* Coupon code input */}
+            {!appliedCoupon ? (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
+                    onKeyDown={e => e.key === 'Enter' && applyCoupon()}
+                    placeholder="Have a coupon code?"
+                    style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: 13, outline: 'none', fontFamily: 'monospace' }}
+                  />
+                  <button onClick={applyCoupon} disabled={checkingCoupon || !couponInput.trim()}
+                    style={{ padding: '9px 14px', borderRadius: 10, border: 'none', background: 'rgba(0,212,170,0.2)', color: '#00D4AA', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0, opacity: !couponInput.trim() ? 0.5 : 1 }}>
+                    {checkingCoupon ? '…' : 'Apply'}
+                  </button>
+                </div>
+                {couponError && <div style={{ marginTop: 6, fontSize: 12, color: '#FCA5A5' }}>✗ {couponError}</div>}
+              </div>
+            ) : (
+              <div style={{ marginBottom: 20, background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#00D4AA' }}>✓ {appliedCoupon.code} applied</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{appliedCoupon.description}</div>
+                </div>
+                <button onClick={() => { setAppliedCoupon(null); setCouponInput('') }}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 18, cursor: 'pointer', padding: '0 4px' }}>×</button>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {PAID_FEATURES.map(f => (
                 <div key={f.label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
