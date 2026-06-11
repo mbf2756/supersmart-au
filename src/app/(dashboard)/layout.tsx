@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
+import { SubscriptionProvider } from '@/components/SubscriptionContext'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -14,11 +15,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .single()
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <Sidebar subscription={subscription} />
-      <main className="ml-[220px] flex-1 min-h-screen flex flex-col">
-        {children}
-      </main>
-    </div>
+    <SubscriptionProvider subscription={subscription}>
+      <div className="flex min-h-screen bg-surface">
+        <Sidebar subscription={subscription} />
+        <main className="ml-[220px] flex-1 min-h-screen flex flex-col">
+          {children}
+        </main>
+      </div>
+    </SubscriptionProvider>
   )
 }
