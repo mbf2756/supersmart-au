@@ -34,7 +34,6 @@ export default function HomePage() {
         <div className="flex items-center gap-6">
           <Link href="/pricing" className="text-sm text-navy/60 hover:text-navy transition-colors">Pricing</Link>
           <Link href="/contact" className="text-sm text-navy/60 hover:text-navy transition-colors">Contact</Link>
-          <Link href="/contact" className="text-sm text-navy/60 hover:text-navy transition-colors">Contact</Link>
           <Link href="/login" className="text-sm text-navy/60 hover:text-navy transition-colors">Sign in</Link>
           <Link href="/signup" className="px-4 py-2 bg-navy text-white text-sm font-medium rounded-xl hover:bg-navy-mid transition-colors">
             Get started free
