@@ -104,6 +104,40 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
   return (
     <div style={{ maxWidth: 1000 }}>
 
+      {/* ── FUND COMPARISON UPSELL ────────────────────────────────── */}
+      <div style={{ background: 'linear-gradient(135deg, #0F1E3C 0%, #1A2F5A 100%)', borderRadius: 16, padding: '22px 28px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: '#00D4AA', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+            Why fee analysis is just the start
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'white', marginBottom: 6, lineHeight: 1.4 }}>
+            Knowing your fee is one thing. Knowing exactly how it compares to every like-for-like alternative is another.
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
+            The fund comparison tool shows you every fund offering a similar option — sorted by total annual cost at your balance, with verified 1yr, 3yr, and 5yr returns side by side.
+            Subscribers see whether switching could realistically improve both fees and returns, not just one of them.
+          </div>
+          <div style={{ display: 'flex', gap: 20, marginTop: 12, flexWrap: 'wrap' }}>
+            {[
+              { stat: '40+', label: 'funds compared' },
+              { stat: '5 min', label: 'to find a better option' },
+              { stat: 'PDS-verified', label: 'fee data' },
+            ].map(s => (
+              <div key={s.stat} style={{ display: 'flex', flexDirection: 'column' as const }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: '#00D4AA' }}>{s.stat}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'center' as const }}>
+          <a href="/pricing" style={{ display: 'block', background: '#00D4AA', color: '#0F1E3C', padding: '12px 24px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: 14, marginBottom: 8, whiteSpace: 'nowrap' as const }}>
+            Compare funds — from $60/qtr →
+          </a>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Unlock fund comparison + 5 other tools</div>
+        </div>
+      </div>
+
       {/* ── HERO IMPACT BANNER ─────────────────────────────────── */}
       <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '28px 32px', marginBottom: 20, color: 'white' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'flex-start' }}>
@@ -373,8 +407,8 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{item.text}</div>
                 </div>
               ))}
-              <a href="/funds" style={{ display: 'inline-block', marginTop: 6, background: '#00D4AA', color: '#0F1E3C', padding: '8px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
-                Compare funds →
+              <a href="/pricing" style={{ display: 'inline-block', marginTop: 6, background: '#00D4AA', color: '#0F1E3C', padding: '8px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
+                Unlock fund comparison →
               </a>
             </div>
           )}
