@@ -26,21 +26,19 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Nav */}
-      <nav className="bg-white border-b border-black/8 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div>
-          <div className="font-mono text-[10px] text-teal tracking-widest uppercase">AU · SUPER</div>
-          <div className="text-base font-semibold text-navy leading-none">SmartSuper</div>
-        </div>
-        <div className="hidden sm:flex items-center gap-6">
-          <Link href="/pricing" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors">Pricing</Link>
-          <Link href="/contact" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors">Contact</Link>
-          <Link href="/login" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors px-4 py-2 rounded-xl border border-navy/15 hover:border-navy/30 transition-all">Sign in</Link>
-          <Link href="/signup" className="px-5 py-2.5 bg-teal text-navy text-sm font-bold rounded-xl hover:bg-teal-dim transition-colors shadow-sm">
+      <nav style={{ background: 'white', borderBottom: '1px solid rgba(15,30,60,0.1)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#00D4AA', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>AU · SUPER</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#0F1E3C', lineHeight: 1 }}>SmartSuper AU</div>
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Link href="/pricing" style={{ fontSize: 14, color: 'rgba(15,30,60,0.65)', textDecoration: 'none', padding: '8px 12px', fontWeight: 500 }}>Pricing</Link>
+          <Link href="/contact" style={{ fontSize: 14, color: 'rgba(15,30,60,0.65)', textDecoration: 'none', padding: '8px 12px', fontWeight: 500 }}>Contact</Link>
+          <Link href="/login" style={{ fontSize: 14, color: '#0F1E3C', textDecoration: 'none', padding: '9px 18px', borderRadius: 10, fontWeight: 600, border: '1.5px solid rgba(15,30,60,0.2)', background: 'white', marginLeft: 4 }}>Sign in</Link>
+          <Link href="/signup" style={{ fontSize: 14, color: 'white', textDecoration: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, background: '#0F1E3C', marginLeft: 4 }}>
             Get started free →
           </Link>
         </div>
-        {/* Mobile CTA - always visible */}
-        <Link href="/signup" className="sm:hidden px-4 py-2 bg-navy text-white text-sm font-bold rounded-xl">Start free</Link>
       </nav>
 
       {/* Hero */}
@@ -55,25 +53,23 @@ export default function HomePage() {
         <p className="text-xl text-navy/60 mb-10 max-w-2xl mx-auto leading-relaxed">
           SmartSuper AU is Australia's only independent super optimisation platform. Free health score, carry-forward tracker, fee analyser, and Division 296 modeller — no fund bias, no commissions.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/signup" className="w-full sm:w-auto px-8 py-4 bg-navy text-white font-bold rounded-xl hover:bg-navy-mid transition-all text-base shadow-lg shadow-navy/20 flex items-center justify-center gap-2">
-            <span>Get my free super score</span>
-            <span>→</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <Link href="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#00D4AA', color: '#0F1E3C', fontWeight: 800, fontSize: 16, borderRadius: 12, textDecoration: 'none', boxShadow: '0 4px 20px rgba(0,212,170,0.4)', letterSpacing: '-0.01em' }}>
+            Get my free super score →
           </Link>
-          <Link href="/pricing" className="w-full sm:w-auto px-8 py-4 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-all text-base flex items-center justify-center gap-2">
-            <span>See pricing</span>
-            <span className="text-navy/60">$149/yr</span>
+          <Link href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#0F1E3C', color: 'white', fontWeight: 600, fontSize: 16, borderRadius: 12, textDecoration: 'none' }}>
+            See pricing <span style={{ opacity: 0.6, fontSize: 14 }}>$149/yr</span>
           </Link>
         </div>
       </section>
 
       {/* Stats */}
-      <section className="bg-navy py-14 px-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+      <section style={{ background: "#0F1E3C", padding: "56px 32px" }}>
+        <div style={{ maxWidth: 1020, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "32px 24px" }} className="sm:grid-cols-4-custom">
           {STATS.map(s => (
-            <div key={s.label} className="text-center">
-              <div className="font-mono text-3xl font-medium text-teal mb-1">{s.value}</div>
-              <div className="text-sm text-white/50">{s.label}</div>
+            <div key={s.label} style={{ textAlign: "center" }}>
+              <div style={{ fontFamily: "monospace", fontSize: 30, fontWeight: 600, color: "#00D4AA", marginBottom: 4 }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -114,10 +110,10 @@ export default function HomePage() {
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-semibold text-navy mb-4 tracking-tight">Start with your free super score</h2>
           <p className="text-navy/60 mb-8">Takes 2 minutes. No credit card required.</p>
-          <Link href="/signup" className="inline-block px-10 py-4 bg-navy text-white font-bold rounded-xl hover:bg-navy-mid transition-all text-base shadow-lg shadow-navy/20">
-            Get my free super score — it's free →
+          <Link href="/signup" style={{ display: 'inline-block', padding: '16px 40px', background: '#00D4AA', color: '#0F1E3C', fontWeight: 800, fontSize: 17, borderRadius: 14, textDecoration: 'none', boxShadow: '0 6px 24px rgba(0,212,170,0.35)', letterSpacing: '-0.01em' }}>
+            Get my free super score →
           </Link>
-          <p className="mt-4 text-sm text-navy/40">Takes 2 minutes · No credit card · Cancel anytime</p>
+          <p style={{ marginTop: 14, fontSize: 13, color: 'rgba(15,30,60,0.45)' }}>Takes 2 minutes · No credit card required</p>
         </div>
       </section>
 
