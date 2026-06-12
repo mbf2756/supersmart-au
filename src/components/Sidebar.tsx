@@ -8,15 +8,15 @@ const NAV = [
   { group: 'Free tools', items: [
     { href: '/dashboard',     label: 'Health score',    icon: '⬡',  paid: false },
     { href: '/fees',          label: 'Fee analyser',    icon: '$',   paid: false },
+    { href: '/funds',         label: 'Fund comparison', icon: '≡',   paid: false },
     { href: '/contributions', label: 'Contributions',   icon: '↑',   paid: false, badge: '3' },
   ]},
   { group: 'Subscriber tools', items: [
-    { href: '/funds',         label: 'Fund comparison', icon: '≡',   paid: true },
+    { href: '/portfolios',    label: 'Model portfolios',   icon: '📈',  paid: true },
     { href: '/salary',        label: 'Salary sacrifice',   icon: '⇄',   paid: true },
     { href: '/div296',        label: 'Div 296 exposure',   icon: '⚠',   paid: true, badge: '!' },
     { href: '/spouse',        label: 'Spouse analysis',    icon: '◑',   paid: true },
-    { href: '/smsf',          label: 'SMSF ETF portfolio',     icon: '◈',   paid: true },
-    { href: '/portfolios',    label: 'Model ETF portfolios', icon: '📈',  paid: true },
+    { href: '/smsf',          label: 'SMSF analytics',     icon: '◈',   paid: true },
   ]},
 ]
 
