@@ -215,24 +215,6 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
   const [showFundDropdown, setShowFundDropdown] = useState(false)
 
 
-  // ── LOCK STATE ─────────────────────────────────────────────────────────────
-  // Core financial fields are locked after first real save.
-  // Preference fields (retirement age, SG rate, account count) stay editable.
-  const isLocked: boolean = sp?.profile_locked === true
-  const CORE_FIELDS = ['age', 'salary', 'current_balance', 'fund_name', 'fund_option', 'fund_fee_pct']
-
-  // Mask a number for display when locked (shows to a potential account sharer)
-  function maskValue(val: number, type: 'currency' | 'age' | 'pct'): string {
-    if (type === 'currency') {
-      // Show rough order of magnitude only, e.g. $430,000 → $4XX,XXX
-      const s = Math.round(val).toString()
-      return '$' + s[0] + 'X'.repeat(s.length - 1)
-    }
-    if (type === 'age') return 'XX'
-    if (type === 'pct') return 'X.XX%'
-    return '***'
-  }
-
   const [form, setForm] = useState({
     age: sp?.age ?? 40,
     salary: sp?.salary ?? 80000,
@@ -288,30 +270,14 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Not logged in'); setSaving(false); return }
 
-      // Locked profiles: only send editable preference fields, never core financial data
-      const payload = isLocked
-        ? {
-            user_id: user.id,
-            employer_sg_rate: form.employer_sg_rate,
-            target_retirement_age: form.target_retirement_age,
-            account_count: form.account_count,
-            making_voluntary_contribs: form.making_voluntary_contribs,
-            carry_forward_balance: form.carry_forward_balance,
-            personal_contribs_ytd: form.personal_contribs_ytd,
-
-          }
-        : { ...form, fund_name: fundSearch || form.fund_name, user_id: user.id }
+      const payload = { ...form, fund_name: fundSearch || form.fund_name, user_id: user.id }
 
       const { error: dbError } = await supabase
         .from('super_profiles')
         .upsert(payload, { onConflict: 'user_id' })
 
       if (dbError) {
-        if (dbError.message?.includes('locked')) {
-          setError('Your core profile details are locked. Email support@smartsuperau.com to request a correction.')
-        } else {
-          setError(dbError.message)
-        }
+        setError(dbError.message)
       } else {
         setSaved(true); setTimeout(() => setSaved(false), 3000); router.refresh()
       }
@@ -334,39 +300,22 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
   return (
     <div style={{ maxWidth: 720 }}>
 
-      {/* Lock status banner OR setup guide */}
-      {isLocked ? (
-        <div style={{ background: 'rgba(15,30,60,0.04)', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
-          <div>
-            <div style={{ fontWeight: 600, color: '#0F1E3C', fontSize: 14, marginBottom: 6 }}>Core profile locked</div>
-            <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.65)', lineHeight: 1.7 }}>
-              Your financial details were locked when you first saved your profile. This protects your data and ensures all calculations remain accurate to you specifically.{' '}
-              <strong style={{ color: '#0F1E3C' }}>Preference fields</strong> (retirement age, SG rate) can still be updated anytime.
-              Made a genuine error? Email <strong>support@smartsuperau.com</strong> with your registered email and we'll unlock within 24 hours.
+      {/* Setup guide */}
+      <div style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 14, padding: '16px 20px', marginBottom: 24 }}>
+        <div style={{ fontWeight: 600, color: '#065F46', fontSize: 14, marginBottom: 8 }}>📱 Where to find your super details</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[
+            { label: 'Fund name & balance', how: 'Log in to your fund\'s app/website, or check MyGov → ATO → Super' },
+            { label: 'Investment option', how: 'Shown in your member portal. If you\'ve never changed it, you\'re likely in the default MySuper option' },
+            { label: 'Annual fee %', how: 'We pre-fill this when you select your fund + option. Verify in your fund\'s Fees & Costs Guide (PDS)' },
+            { label: 'Employer SG rate', how: '12% for most employees from 1 Jul 2025. Check your payslip.' },
+          ].map(item => (
+            <div key={item.label} style={{ fontSize: 12, color: 'rgba(15,30,60,0.7)', lineHeight: 1.6 }}>
+              <strong style={{ color: '#0F1E3C' }}>{item.label}:</strong> {item.how}
             </div>
-          </div>
+          ))}
         </div>
-      ) : (
-        <div style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 14, padding: '16px 20px', marginBottom: 24 }}>
-          <div style={{ fontWeight: 600, color: '#065F46', fontSize: 14, marginBottom: 8 }}>📱 Where to find your super details</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[
-              { label: 'Fund name & balance', how: 'Log in to your fund\'s app/website, or check MyGov → ATO → Super' },
-              { label: 'Investment option', how: 'Shown in your member portal. If you\'ve never changed it, you\'re likely in the default MySuper option' },
-              { label: 'Annual fee %', how: 'We pre-fill this when you select your fund + option. Verify in your fund\'s Fees & Costs Guide (PDS)' },
-              { label: 'Employer SG rate', how: '12% for most employees from 1 Jul 2025. Check your payslip.' },
-            ].map(item => (
-              <div key={item.label} style={{ fontSize: 12, color: 'rgba(15,30,60,0.7)', lineHeight: 1.6 }}>
-                <strong style={{ color: '#0F1E3C' }}>{item.label}:</strong> {item.how}
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(245,158,11,0.1)', borderRadius: 8, fontSize: 12, color: '#92400E', fontWeight: 500 }}>
-            ⚠ Your core details (age, salary, balance, fund) will be <strong>locked after your first save</strong>. Double-check everything carefully before saving.
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Profile card */}
       <div style={{ background: 'white', borderRadius: 16, padding: '28px', border: '1px solid rgba(15,30,60,0.1)', marginBottom: 20 }}>
@@ -376,67 +325,41 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
           {/* Age */}
           <div>
-            <div style={labelStyle}>Age {isLocked && <span style={{ fontSize: 10, background: 'rgba(15,30,60,0.08)', color: 'rgba(15,30,60,0.5)', padding: '1px 6px', borderRadius: 4 }}>🔒 locked</span>}</div>
-            {isLocked
-              ? <div style={{ ...monoInput, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{maskValue(form.age, 'age')}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : <input type="number" value={form.age} onChange={e => set('age', +e.target.value)} style={monoInput} />
-            }
+            <div style={labelStyle}>Age</div>
+            <input type="number" value={form.age} onChange={e => set('age', +e.target.value)} style={monoInput} />
           </div>
 
           {/* Salary */}
           <div>
             <div style={labelStyle}>
               Annual salary (before tax)
-              {isLocked && <span style={{ fontSize: 10, background: 'rgba(15,30,60,0.08)', color: 'rgba(15,30,60,0.5)', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>🔒 locked</span>}
-              {!isLocked && <Hint>Your gross salary before tax. Check your payslip, employment contract, or MyGov income summary. Used to calculate your employer SG and salary sacrifice headroom.</Hint>}
+              <Hint>Your gross salary before tax. Check your payslip, employment contract, or MyGov income summary. Used to calculate your employer SG and salary sacrifice headroom.</Hint>
             </div>
-            {isLocked
-              ? <div style={{ ...monoInput, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{maskValue(form.salary, 'currency')}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : <div style={{ position: 'relative' }}>
-                  <span style={prefix}>$</span>
-                  <input type="number" value={form.salary} onChange={e => set('salary', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
-                </div>
-            }
+            <div style={{ position: 'relative' }}>
+              <span style={prefix}>$</span>
+              <input type="number" value={form.salary} onChange={e => set('salary', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
+            </div>
           </div>
 
           {/* Balance */}
           <div>
             <div style={labelStyle}>
               Current super balance
-              {isLocked && <span style={{ fontSize: 10, background: 'rgba(15,30,60,0.08)', color: 'rgba(15,30,60,0.5)', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>🔒 locked</span>}
-              {!isLocked && <Hint>Log in to your fund's member portal, app, or check MyGov → ATO → Super. Your latest annual statement also shows this. If you have multiple funds, enter your total across all accounts.</Hint>}
+              <Hint>Log in to your fund's member portal, app, or check MyGov → ATO → Super. Your latest annual statement also shows this. If you have multiple funds, enter your total across all accounts.</Hint>
             </div>
-            {isLocked
-              ? <div style={{ ...monoInput, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{maskValue(form.current_balance, 'currency')}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : <div style={{ position: 'relative' }}>
-                  <span style={prefix}>$</span>
-                  <input type="number" value={form.current_balance} onChange={e => set('current_balance', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
-                </div>
-            }
+            <div style={{ position: 'relative' }}>
+              <span style={prefix}>$</span>
+              <input type="number" value={form.current_balance} onChange={e => set('current_balance', +e.target.value)} style={{ ...monoInput, paddingLeft: 28 }} />
+            </div>
           </div>
 
-          {/* Fund name — searchable / locked */}
+          {/* Fund name — searchable */}
           <div style={{ position: 'relative' }}>
             <div style={labelStyle}>
               Super fund name
-              {isLocked && <span style={{ fontSize: 10, background: 'rgba(15,30,60,0.08)', color: 'rgba(15,30,60,0.5)', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>🔒 locked</span>}
-              {!isLocked && <Hint>Search for your fund. When you select it, we automatically load all investment options and their fees. Find your fund name on your super statement, payslip, or MyGov.</Hint>}
+              <Hint>Search for your fund. When you select it, we automatically load all investment options and their fees. Find your fund name on your super statement, payslip, or MyGov.</Hint>
             </div>
-            {isLocked
-              ? <div style={{ ...inputStyle, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{sp?.fund_name ?? '—'}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : <>
+            <>
                   <input
                     type="text"
                     value={fundSearch}
@@ -459,27 +382,20 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
                     </div>
                   )}
                   {showFundDropdown && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={() => setShowFundDropdown(false)} />}
-                </>
-            }
+            </>
           </div>
 
-          {/* Investment option — locked or editable */}
+          {/* Investment option */}
           <div>
             <div style={labelStyle}>
               Investment option
-              {isLocked && <span style={{ fontSize: 10, background: 'rgba(15,30,60,0.08)', color: 'rgba(15,30,60,0.5)', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>🔒 locked</span>}
-              {!isLocked && <Hint>
+              <Hint>
                 This is how your super money is invested inside your fund. Each option has a different fee and risk profile. If you've never changed it, you're in the default (usually "Balanced" or "MySuper Lifecycle").
                 <br /><br />
                 <strong style={{ color: '#00D4AA' }}>Tip:</strong> Indexed options (like "Indexed Balanced") track the market automatically and are typically 5–10× cheaper than actively managed options with similar returns.
-              </Hint>}
+              </Hint>
             </div>
-            {isLocked
-              ? <div style={{ ...inputStyle, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{sp?.fund_option ?? '—'}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : selectedFund && !isOther
+            {selectedFund && !isOther
                 ? <select value={form.fund_option} onChange={e => selectOption(e.target.value)} style={inputStyle}>
                     {selectedFund.options.map(opt => (
                       <option key={opt.name} value={opt.name}>
@@ -488,9 +404,8 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
                       </option>
                     ))}
                   </select>
-                : <input type="text" value={form.fund_option} onChange={e => set('fund_option', e.target.value)}
-                    placeholder="e.g. Balanced, Growth, High Growth" style={inputStyle} />
-            }
+              : <input type="text" value={form.fund_option} onChange={e => set('fund_option', e.target.value)}
+                placeholder="e.g. Balanced, Growth, High Growth" style={inputStyle} />}
           </div>
 
           {/* Fee — auto-filled, with visual indicator */}
@@ -505,19 +420,13 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
                 To verify: go to your fund's website → search "Fees and Costs Guide" or "PDS".
               </Hint>
             </div>
-            {isLocked
-              ? <div style={{ ...monoInput, background: 'rgba(15,30,60,0.03)', color: 'rgba(15,30,60,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{maskValue(form.fund_fee_pct, 'pct')}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>🔒</span>
-                </div>
-              : <input
-                  type="number"
-                  step="0.01"
-                  value={form.fund_fee_pct}
-                  onChange={e => set('fund_fee_pct', +e.target.value)}
-                  style={monoInput}
-                />
-            }
+            <input
+              type="number"
+              step="0.01"
+              value={form.fund_fee_pct}
+              onChange={e => set('fund_fee_pct', +e.target.value)}
+              style={monoInput}
+            />
             {/* Fee indicator */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
               {form.fund_fee_pct > 0 ? (
@@ -555,12 +464,7 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
 
         </div>
 
-        {/* ── PREFERENCE FIELDS (always editable) ──────────────────────── */}
-        {isLocked && (
-          <div style={{ margin: '20px 0 16px', padding: '10px 14px', background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 10, fontSize: 12, color: '#065F46' }}>
-            ✓ The fields below are yours to update anytime — they reflect your choices, not your identity.
-          </div>
-        )}
+        <div style={{ margin: '20px 0 16px', height: 1, background: 'rgba(15,30,60,0.06)' }} />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
@@ -707,10 +611,10 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
         <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <button onClick={save} disabled={saving}
             style={{ padding: '10px 32px', borderRadius: 10, fontSize: 14, fontWeight: 600, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saved ? '#10B981' : '#0F1E3C', color: 'white', opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Saving…' : saved ? '✓ Saved!' : isLocked ? 'Save preferences' : 'Save & lock profile'}
+            {saving ? 'Saving…' : saved ? '✓ Saved!' : 'Save profile'}
           </button>
           {saved && <span style={{ fontSize: 13, color: '#10B981' }}>
-            {isLocked ? 'Preferences updated.' : 'Profile saved and locked — your health score now reflects your details.'}
+            {'Profile saved — your health score now reflects your details.'}
           </span>}
         </div>
       </div>
