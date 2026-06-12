@@ -31,41 +31,45 @@ export default function HomePage() {
           <div className="font-mono text-[10px] text-teal tracking-widest uppercase">AU · SUPER</div>
           <div className="text-base font-semibold text-navy leading-none">SmartSuper</div>
         </div>
-        <div className="flex items-center gap-6">
-          <Link href="/pricing" className="text-sm text-navy/60 hover:text-navy transition-colors">Pricing</Link>
-          <Link href="/contact" className="text-sm text-navy/60 hover:text-navy transition-colors">Contact</Link>
-          <Link href="/login" className="text-sm text-navy/60 hover:text-navy transition-colors">Sign in</Link>
-          <Link href="/signup" className="px-4 py-2 bg-navy text-white text-sm font-medium rounded-xl hover:bg-navy-mid transition-colors">
-            Get started free
+        <div className="hidden sm:flex items-center gap-6">
+          <Link href="/pricing" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors">Pricing</Link>
+          <Link href="/contact" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors">Contact</Link>
+          <Link href="/login" className="text-sm font-medium text-navy/70 hover:text-navy transition-colors px-4 py-2 rounded-xl border border-navy/15 hover:border-navy/30 transition-all">Sign in</Link>
+          <Link href="/signup" className="px-5 py-2.5 bg-teal text-navy text-sm font-bold rounded-xl hover:bg-teal-dim transition-colors shadow-sm">
+            Get started free →
           </Link>
         </div>
+        {/* Mobile CTA - always visible */}
+        <Link href="/signup" className="sm:hidden px-4 py-2 bg-navy text-white text-sm font-bold rounded-xl">Start free</Link>
       </nav>
 
       {/* Hero */}
-      <section className="py-24 px-8 text-center max-w-4xl mx-auto">
+      <section className="py-16 sm:py-24 px-6 sm:px-8 text-center max-w-4xl mx-auto">
         <div className="inline-block font-mono text-xs text-teal bg-teal/10 px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase">
           Independent · No fund bias · Not financial advice
         </div>
-        <h1 className="text-5xl font-semibold text-navy tracking-tight leading-tight mb-5">
+        <h1 className="text-3xl sm:text-5xl font-semibold text-navy tracking-tight leading-tight mb-5">
           Your super is your largest asset.<br />
           <span className="text-teal">Are you getting the most from it?</span>
         </h1>
         <p className="text-xl text-navy/60 mb-10 max-w-2xl mx-auto leading-relaxed">
           SmartSuper AU is Australia's only independent super optimisation platform. Free health score, carry-forward tracker, fee analyser, and Division 296 modeller — no fund bias, no commissions.
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <Link href="/signup" className="px-8 py-3.5 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-colors text-base">
-            Get my free super score
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link href="/signup" className="w-full sm:w-auto px-8 py-4 bg-navy text-white font-bold rounded-xl hover:bg-navy-mid transition-all text-base shadow-lg shadow-navy/20 flex items-center justify-center gap-2">
+            <span>Get my free super score</span>
+            <span>→</span>
           </Link>
-          <Link href="/pricing" className="px-8 py-3.5 border border-black/10 text-navy font-medium rounded-xl hover:bg-white transition-colors text-base">
-            See pricing
+          <Link href="/pricing" className="w-full sm:w-auto px-8 py-4 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-all text-base flex items-center justify-center gap-2">
+            <span>See pricing</span>
+            <span className="text-navy/60">$149/yr</span>
           </Link>
         </div>
       </section>
 
       {/* Stats */}
       <section className="bg-navy py-14 px-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-4 gap-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {STATS.map(s => (
             <div key={s.label} className="text-center">
               <div className="font-mono text-3xl font-medium text-teal mb-1">{s.value}</div>
@@ -93,7 +97,7 @@ export default function HomePage() {
       <section className="py-16 px-8 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold text-navy text-center mb-12 tracking-tight">Everything you need in one place</h2>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map(f => (
               <div key={f.title} className="p-6 bg-surface rounded-2xl">
                 <div className="w-10 h-10 bg-navy/5 rounded-xl flex items-center justify-center text-xl mb-4">{f.icon}</div>
@@ -110,9 +114,10 @@ export default function HomePage() {
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-semibold text-navy mb-4 tracking-tight">Start with your free super score</h2>
           <p className="text-navy/60 mb-8">Takes 2 minutes. No credit card required.</p>
-          <Link href="/signup" className="inline-block px-10 py-4 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-colors text-base">
-            Get my free score →
+          <Link href="/signup" className="inline-block px-10 py-4 bg-navy text-white font-bold rounded-xl hover:bg-navy-mid transition-all text-base shadow-lg shadow-navy/20">
+            Get my free super score — it's free →
           </Link>
+          <p className="mt-4 text-sm text-navy/40">Takes 2 minutes · No credit card · Cancel anytime</p>
         </div>
       </section>
 
