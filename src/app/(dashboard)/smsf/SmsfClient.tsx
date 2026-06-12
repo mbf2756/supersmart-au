@@ -4,45 +4,47 @@ import { createClient } from '@/lib/supabase/client'
 import { fmt } from '@/lib/calculations'
 import { ETF_DATABASE, ETF_CATEGORIES, type ETFRecord } from '@/lib/etfData'
 
-// ─── OVERLAP DETECTION ───────────────────────────────────────────────────────
-const OVERLAP_PAIRS: Record<string, string> = {
-  'A200+VAS':  'Both track the ASX 200/300. No diversification benefit — hold just one.',
-  'VAS+STW':   'Both track the ASX 200/300. Redundant position.',
-  'VAS+IOZ':   'Both track the ASX 200/300. Redundant position.',
-  'A200+IOZ':  'Both track the ASX 200/300. Identical exposure.',
-  'A200+STW':  'Both track the ASX 200/300. Identical exposure.',
-  'VGS+BGBL':  'Both track MSCI World ex-AU — ~95% underlying overlap. Consider removing BGBL.',
-  'VGS+IWLD':  '~90% overlap. IWLD is MSCI World All Cap; VGS is MSCI World. Very similar.',
-  'VGS+IVV':   'VGS is ~68% US equity. IVV is 100% US. Heavy US tech concentration risk.',
-  'IVV+SPY':   'Both track the S&P 500 exactly. Identical — hold just one.',
-  'IVV+NDQ':   'Nasdaq 100 is a concentrated subset of S&P 500 tech names. Double-up.',
-  'NDQ+VGS':   'NDQ adds heavy Nasdaq concentration on top of US tech already inside VGS.',
-  'DHHF+VAS':  'DHHF holds AU shares internally (~37%). Adding VAS doubles AU equity exposure.',
-  'DHHF+VGS':  'DHHF holds global shares internally. Adding VGS creates unintended concentration.',
-  'DHHF+IVV':  'DHHF already contains US equities. IVV adds pure US concentration.',
-  'VDHG+VAS':  'VDHG is a fund-of-funds already containing VAS. Adding it separately doubles AU.',
-  'VDHG+VGS':  'VDHG already contains VGS internally. Adding it separately doubles global equities.',
-  'BGBL+IWLD': 'Both track similar developed-markets indices. ~85% overlap.',
-  'QUAL+VGS':  'QUAL screens from the same MSCI World universe as VGS. ~70% stock overlap.',
+// ─── OVERLAP KNOWLEDGE BASE ──────────────────────────────────────────────────
+type OverlapInfo = { reason: string; severity: 'high' | 'medium'; action: string }
+const OVERLAP_PAIRS: Record<string, OverlapInfo> = {
+  'A200+VAS':  { severity:'high',   reason:'Both track the ASX 200/300 index — you own the same ~200 Australian companies twice.', action:'Remove one. A200 (0.04% MER) is the cheaper option vs VAS (0.07%). No difference in exposure.' },
+  'VAS+STW':   { severity:'high',   reason:'VAS tracks ASX 300; STW tracks ASX 200. ~99% stock overlap.', action:'Remove STW and keep VAS — broader index at lower cost.' },
+  'VAS+IOZ':   { severity:'high',   reason:'Both track the ASX 200/300. Identical exposure at different costs.', action:'Keep whichever you already own. IOZ (0.09%) and VAS (0.07%) are near-identical.' },
+  'A200+IOZ':  { severity:'high',   reason:'Both track ASX 200. You own the same 200 Australian stocks twice.', action:'Keep A200 — it has the lowest MER (0.04%) of any ASX 200 ETF.' },
+  'A200+STW':  { severity:'high',   reason:'Both track ASX 200. Redundant position.', action:'Consolidate into A200 for the lowest cost.' },
+  'IVV+SPY':   { severity:'high',   reason:'Both track the S&P 500 exactly — identical 500 US companies, different fund managers.', action:'Keep IVV (0.04% MER) — it\'s cheaper and more tax-efficient for Australian investors.' },
+  'VGS+BGBL':  { severity:'high',   reason:'Both track the MSCI World ex-Australia index — ~95% of holdings are identical.', action:'Remove BGBL and keep VGS, or vice versa. VGS is larger with more liquidity. BGBL (0.08%) is cheaper than VGS (0.18%).' },
+  'VGS+IWLD':  { severity:'medium', reason:'IWLD tracks MSCI World All Cap (includes small caps); VGS tracks MSCI World (large/mid cap only). ~90% stock overlap.', action:'If you want small-cap exposure, keep both — but size your VGS position smaller to avoid over-weighting the overlap stocks.' },
+  'VGS+IVV':   { severity:'medium', reason:'VGS is ~68% US equities. Adding IVV (100% US) concentrates you further into US large-cap tech.', action:'If you\'re comfortable with heavy US exposure, this is acceptable. Otherwise reduce IVV and increase ex-US holdings (VEU or VAE) for true diversification.' },
+  'IVV+NDQ':   { severity:'high',   reason:'Nasdaq 100 (NDQ) is a concentrated subset of S&P 500 — mostly Apple, Microsoft, Nvidia, Meta, Alphabet. You\'re doubling your weight in the same mega-cap US tech stocks.', action:'Decide: do you want S&P 500 exposure (IVV) or concentrated US tech exposure (NDQ)? Holding both at similar weights is not diversification — it\'s concentration.' },
+  'NDQ+VGS':   { severity:'medium', reason:'VGS already holds ~68% US equities, of which ~30% is tech. NDQ adds another concentrated layer of the same US tech names.', action:'Limit NDQ to a small satellite position (5–15% of portfolio) if you want tech tilt. Don\'t hold NDQ and VGS at equal weights.' },
+  'DHHF+VAS':  { severity:'high',   reason:'DHHF is already ~37% Australian equities internally. Adding VAS doubles your AU allocation to ~55–60% of total portfolio.', action:'Remove VAS if you\'re using DHHF as your core holding — it\'s designed as a complete all-in-one portfolio.' },
+  'DHHF+VGS':  { severity:'high',   reason:'DHHF already holds global equities as ~63% of its portfolio. Adding VGS separately creates a ~75% global equities position.', action:'Remove VGS. DHHF is designed as a standalone portfolio — adding individual asset class ETFs defeats the diversification purpose.' },
+  'DHHF+IVV':  { severity:'medium', reason:'DHHF includes US equities internally via its global allocation. IVV adds pure US concentration on top.', action:'Consider whether the extra US tilt is intentional. If so, limit IVV to a small position (5–10%).' },
+  'VDHG+VAS':  { severity:'high',   reason:'VDHG is a fund-of-funds that already holds VAS internally as its Australian equity component.', action:'Remove VAS — you\'re literally paying for the same fund twice (VDHG already buys VAS for you).' },
+  'VDHG+VGS':  { severity:'high',   reason:'VDHG already holds VGS internally as its international equity component.', action:'Remove VGS — same situation as above. VDHG is designed as a complete portfolio.' },
+  'BGBL+IWLD': { severity:'medium', reason:'Both track developed market indices with ~85% stock overlap. BGBL is Solactive; IWLD is MSCI World All Cap.', action:'Keep whichever aligns with your preference. BGBL (0.08%) is cheaper; IWLD includes small caps.' },
+  'QUAL+VGS':  { severity:'medium', reason:'QUAL screens from the same MSCI World universe as VGS. ~70% of QUAL\'s holdings are already in VGS.', action:'If you want quality factor tilt, replace VGS entirely with QUAL, rather than holding both at equal weights.' },
 }
 
-function detectOverlaps(tickers: string[]): { pair: string; reason: string }[] {
+function detectOverlaps(tickers: string[]): { pair: string; info: OverlapInfo }[] {
   const set = new Set(tickers.map(t => t.toUpperCase()))
   return Object.entries(OVERLAP_PAIRS)
     .filter(([pair]) => { const [a, b] = pair.split('+'); return set.has(a) && set.has(b) })
-    .map(([pair, reason]) => ({ pair, reason }))
+    .map(([pair, info]) => ({ pair, info }))
+    .sort((a, b) => (a.info.severity === 'high' ? -1 : 1))
 }
 
 // ─── TBAR QUARTERS ───────────────────────────────────────────────────────────
 function getTbarDeadlines() {
   const now = new Date()
   const year = now.getFullYear()
-  const quarters = [
+  const ends = [
     new Date(year, 2, 31), new Date(year, 5, 30),
     new Date(year, 8, 30), new Date(year, 11, 31),
-    new Date(year + 1, 2, 31), new Date(year + 1, 5, 30),
+    new Date(year+1, 2, 31), new Date(year+1, 5, 30),
   ]
-  return quarters.map(qe => {
+  return ends.map(qe => {
     const due = new Date(qe); due.setDate(due.getDate() + 28)
     const days = Math.ceil((due.getTime() - now.getTime()) / 86400000)
     return {
@@ -53,86 +55,86 @@ function getTbarDeadlines() {
   }).filter(q => q.days > -60).slice(0, 4)
 }
 
-// ─── ETF SEARCH DROPDOWN ─────────────────────────────────────────────────────
-function ETFSearch({ onSelect }: { onSelect: (etf: ETFRecord) => void }) {
+// ─── ETF SEARCH ──────────────────────────────────────────────────────────────
+function ETFSearch({ onSelect, alreadyAdded }: { onSelect: (etf: ETFRecord) => void; alreadyAdded: string[] }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [])
 
   const results = useMemo(() => {
     const q = query.toLowerCase().trim()
     return ETF_DATABASE.filter(e =>
+      !alreadyAdded.includes(e.ticker) &&
       (!category || e.category === category) &&
-      (!q || e.ticker.toLowerCase().includes(q) ||
-        e.name.toLowerCase().includes(q) ||
-        e.issuer.toLowerCase().includes(q) ||
-        e.index.toLowerCase().includes(q))
-    ).slice(0, 12)
-  }, [query, category])
+      (!q || e.ticker.toLowerCase().includes(q) || e.name.toLowerCase().includes(q) ||
+        e.issuer.toLowerCase().includes(q) || e.index.toLowerCase().includes(q))
+    ).slice(0, 10)
+  }, [query, category, alreadyAdded])
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         <select value={category} onChange={e => { setCategory(e.target.value); setOpen(true) }}
-          style={{ padding: '9px 10px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 9, fontSize: 12, color: '#0F1E3C', background: 'white', outline: 'none', flexShrink: 0 }}>
+          style={{ padding: '10px 12px', border: '1.5px solid rgba(0,212,170,0.4)', borderRadius: 10, fontSize: 12, color: '#0F1E3C', background: 'white', outline: 'none', cursor: 'pointer' }}>
           {ETF_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
         <div style={{ position: 'relative', flex: 1 }}>
-          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, opacity: 0.4 }}>🔍</span>
-          <input
-            value={query}
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, opacity: 0.4 }}>🔍</span>
+          <input value={query}
             onChange={e => { setQuery(e.target.value); setOpen(true) }}
             onFocus={() => setOpen(true)}
-            placeholder="Search by ticker, name, or fund house..."
-            style={{ width: '100%', padding: '9px 12px 9px 32px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 9, fontSize: 13, color: '#0F1E3C', background: 'white', outline: 'none', boxSizing: 'border-box' }}
-          />
+            placeholder="Type ticker, fund name, or issuer (e.g. VAS, Vanguard, BetaShares)..."
+            style={{ width: '100%', padding: '10px 12px 10px 34px', border: '1.5px solid rgba(0,212,170,0.4)', borderRadius: 10, fontSize: 13, color: '#0F1E3C', outline: 'none', boxSizing: 'border-box', background: 'white' }} />
         </div>
       </div>
 
       {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: 'white', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(15,30,60,0.12)', marginTop: 4, overflow: 'hidden' }}>
-          {/* Header row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 90px 60px 60px 60px 60px', gap: 0, padding: '7px 14px', background: 'rgba(15,30,60,0.04)', borderBottom: '1px solid rgba(15,30,60,0.08)' }}>
-            {['Ticker','Name / Index','Issuer','MER','1yr','3yr','5yr'].map(h => (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: 'white', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 12, boxShadow: '0 12px 40px rgba(15,30,60,0.15)', marginTop: 4, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '68px 1fr 100px 52px 56px 56px 56px', padding: '6px 14px', background: 'rgba(15,30,60,0.04)', borderBottom: '1px solid rgba(15,30,60,0.07)' }}>
+            {['Ticker','Name & Index','Issuer','MER','1yr','3yr','5yr'].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 600, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
             ))}
           </div>
-          <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+          <div style={{ maxHeight: 300, overflowY: 'auto' }}>
             {results.map(etf => (
-              <div key={etf.ticker}
-                onClick={() => { onSelect(etf); setQuery(''); setOpen(false) }}
-                style={{ display: 'grid', gridTemplateColumns: '64px 1fr 90px 60px 60px 60px 60px', gap: 0, padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(15,30,60,0.04)', alignItems: 'center' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,212,170,0.05)')}
+              <div key={etf.ticker} onClick={() => { onSelect(etf); setQuery(''); setOpen(false) }}
+                style={{ display: 'grid', gridTemplateColumns: '68px 1fr 100px 52px 56px 56px 56px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(15,30,60,0.04)', alignItems: 'center' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,212,170,0.06)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#0F1E3C' }}>{etf.ticker}</span>
-                  {etf.esg && <span style={{ marginLeft: 4, fontSize: 8, background: 'rgba(0,212,170,0.15)', color: '#065F46', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>ESG</span>}
-                  {etf.hedged && <span style={{ marginLeft: 3, fontSize: 8, background: '#EDE9FE', color: '#3C3489', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>HDG</span>}
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {etf.esg && <span style={{ fontSize: 8, background: 'rgba(0,212,170,0.15)', color: '#065F46', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>ESG</span>}
+                    {etf.hedged && <span style={{ fontSize: 8, background: '#EDE9FE', color: '#3C3489', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>HDG</span>}
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: '#0F1E3C', fontWeight: 500, lineHeight: 1.3 }}>{etf.name.length > 42 ? etf.name.slice(0, 42) + '…' : etf.name}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(15,30,60,0.45)', marginTop: 1 }}>{etf.index}</div>
+                  <div style={{ fontSize: 12, color: '#0F1E3C', fontWeight: 500, lineHeight: 1.3 }}>{etf.name.length > 40 ? etf.name.slice(0, 40) + '…' : etf.name}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(15,30,60,0.4)', marginTop: 1 }}>{etf.index}</div>
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.6)' }}>{etf.issuer}</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#0F1E3C', textAlign: 'right' }}>{etf.mer.toFixed(2)}%</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'right', color: etf.ret1 ? (etf.ret1 >= 15 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>{etf.ret1 ? `${etf.ret1.toFixed(1)}%` : '—'}</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'right', color: etf.ret3 ? (etf.ret3 >= 10 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>{etf.ret3 ? `${etf.ret3.toFixed(1)}%` : '—'}</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'right', color: etf.ret5 ? (etf.ret5 >= 10 ? '#00D4AA' : '#0F1E3C') : 'rgba(15,30,60,0.3)' }}>{etf.ret5 ? `${etf.ret5.toFixed(1)}%` : '—'}</div>
+                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.55)' }}>{etf.issuer}</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#534AB7', fontWeight: 600 }}>{etf.mer.toFixed(2)}%</div>
+                {[etf.ret1, etf.ret3, etf.ret5].map((r, i) => (
+                  <div key={i} style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'right', color: r ? (r >= 15 ? '#00D4AA' : r >= 8 ? '#0F1E3C' : '#D97706') : 'rgba(15,30,60,0.25)' }}>{r ? `${r.toFixed(1)}%` : '—'}</div>
+                ))}
               </div>
             ))}
           </div>
-          <div style={{ padding: '6px 14px', fontSize: 10, color: 'rgba(15,30,60,0.35)', borderTop: '1px solid rgba(15,30,60,0.06)' }}>
-            {results.length} results · Returns to 30 Jun 2025, net of fees · MER from fund issuer websites
+          <div style={{ padding: '6px 14px', fontSize: 10, color: 'rgba(15,30,60,0.35)', background: 'rgba(15,30,60,0.02)' }}>
+            Returns to 30 Jun 2025, net of fees · MER from issuer websites
           </div>
+        </div>
+      )}
+      {open && query.length > 1 && results.length === 0 && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: 'white', border: '1px solid rgba(15,30,60,0.12)', borderRadius: 12, padding: '16px', textAlign: 'center', fontSize: 13, color: 'rgba(15,30,60,0.5)', marginTop: 4 }}>
+          No ETFs found for "{query}". Try a different ticker or fund name.
         </div>
       )}
     </div>
@@ -142,69 +144,51 @@ function ETFSearch({ onSelect }: { onSelect: (etf: ETFRecord) => void }) {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 type Holding = { ticker: string; value: number; etfData?: ETFRecord }
 
-export function SmsfClient({ holdings: initialHoldings, subscription }: { holdings: any[]; subscription: any }) {
+export function SmsfClient({ holdings: initial, subscription }: { holdings: any[]; subscription: any }) {
   const isPaid = subscription?.plan !== 'free'
   const supabase = createClient()
 
   const [holdings, setHoldings] = useState<Holding[]>(
-    initialHoldings.length > 0
-      ? initialHoldings.map((h: any) => ({
-          ticker: h.ticker,
-          value: h.value,
-          etfData: ETF_DATABASE.find(e => e.ticker === h.ticker),
-        }))
-      : []
+    initial.length > 0 ? initial.map((h: any) => ({
+      ticker: h.ticker, value: h.value,
+      etfData: ETF_DATABASE.find(e => e.ticker === h.ticker),
+    })) : []
   )
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
-  const [pensionBalance, setPensionBalance] = useState(500000)
+  const [pensionBal, setPensionBal] = useState(500000)
   const [memberAge, setMemberAge] = useState(68)
 
   const total = useMemo(() => holdings.reduce((s, h) => s + h.value, 0), [holdings])
+  const allAdded = holdings.map(h => h.ticker)
+  const overlaps = useMemo(() => detectOverlaps(allAdded), [allAdded])
+  const overlapTickers = useMemo(() => new Set(overlaps.flatMap(o => o.pair.split('+'))), [overlaps])
 
-  const overlaps = useMemo(() =>
-    detectOverlaps(holdings.map(h => h.ticker)),
-    [holdings]
-  )
-  const overlapTickers = useMemo(() =>
-    new Set(overlaps.flatMap(o => o.pair.split('+'))),
-    [overlaps]
-  )
-
-  // Portfolio stats
   const weightedMer = useMemo(() => {
     if (total === 0) return null
-    const sum = holdings.reduce((s, h) => s + (h.etfData?.mer ?? 0) * h.value, 0)
-    return sum / total
+    return holdings.reduce((s, h) => s + (h.etfData?.mer ?? 0) * h.value, 0) / total
   }, [holdings, total])
 
   const allocationByClass = useMemo(() => {
     const map: Record<string, number> = {}
-    holdings.forEach(h => {
-      const cls = h.etfData?.assetClass ?? 'Unknown'
-      map[cls] = (map[cls] || 0) + h.value
-    })
-    return Object.entries(map).map(([cls, val]) => ({ cls, val, pct: total > 0 ? val / total * 100 : 0 }))
-      .sort((a, b) => b.val - a.val)
+    holdings.forEach(h => { const c = h.etfData?.assetClass ?? 'Unknown'; map[c] = (map[c] || 0) + h.value })
+    return Object.entries(map).map(([cls, val]) => ({ cls, val, pct: total > 0 ? val / total * 100 : 0 })).sort((a, b) => b.val - a.val)
   }, [holdings, total])
 
-  const minPensionRate = memberAge < 65 ? 4 : memberAge < 75 ? 5 : memberAge < 80 ? 6 : memberAge < 85 ? 7 : memberAge < 90 ? 9 : memberAge < 95 ? 11 : 14
-  const minPension = pensionBalance * minPensionRate / 100
+  const minRate = memberAge < 65 ? 4 : memberAge < 75 ? 5 : memberAge < 80 ? 6 : memberAge < 85 ? 7 : memberAge < 90 ? 9 : memberAge < 95 ? 11 : 14
+  const minPension = pensionBal * minRate / 100
+  const tbarDeadlines = useMemo(() => getTbarDeadlines(), [])
 
   function addEtf(etf: ETFRecord) {
-    if (holdings.find(h => h.ticker === etf.ticker)) return
     setHoldings(prev => [...prev, { ticker: etf.ticker, etfData: etf, value: 0 }])
     setSaveMsg('')
   }
-
   function updateValue(idx: number, val: number) {
     setHoldings(prev => prev.map((h, i) => i === idx ? { ...h, value: val } : h))
   }
-
   function removeHolding(idx: number) {
     setHoldings(prev => prev.filter((_, i) => i !== idx))
   }
-
   async function saveHoldings() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -212,29 +196,23 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
     await supabase.from('smsf_holdings').delete().eq('user_id', user.id)
     if (holdings.length > 0) {
       await supabase.from('smsf_holdings').insert(
-        holdings.map(h => ({
-          user_id: user.id, ticker: h.ticker,
-          value: h.value,
-          asset_class: h.etfData?.category ?? 'other',
-        }))
+        holdings.map(h => ({ user_id: user.id, ticker: h.ticker, value: h.value, asset_class: h.etfData?.category ?? 'other' }))
       )
     }
-    setSaving(false)
-    setSaveMsg('Saved ✓')
-    setTimeout(() => setSaveMsg(''), 3000)
+    setSaving(false); setSaveMsg('Saved ✓'); setTimeout(() => setSaveMsg(''), 3000)
   }
 
-  const tbarDeadlines = useMemo(() => getTbarDeadlines(), [])
-  const c: React.CSSProperties = { background: 'white', borderRadius: 16, padding: '22px 24px', border: '1px solid rgba(15,30,60,0.1)' }
+  const cls: React.CSSProperties = { background: 'white', borderRadius: 16, padding: '22px 24px', border: '1px solid rgba(15,30,60,0.1)' }
+  const PALETTE = ['#534AB7','#00D4AA','#F59E0B','#EF4444','#06B6D4','#8B5CF6','#EC4899','#10B981','#F97316','#64748B']
 
   if (!isPaid) {
     return (
       <div style={{ maxWidth: 960 }}>
-        <div style={{ ...c, textAlign: 'center', padding: '60px 40px' }}>
+        <div style={{ ...cls, textAlign: 'center', padding: '60px 40px' }}>
           <div style={{ fontSize: 32, marginBottom: 16 }}>◈</div>
           <h3 style={{ fontSize: 18, fontWeight: 600, color: '#0F1E3C', marginBottom: 8 }}>SMSF Analytics</h3>
-          <p style={{ fontSize: 13, color: 'rgba(15,30,60,0.6)', maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.7 }}>
-            Search and select from 70+ ASX ETFs to build your SMSF holdings. Get instant overlap detection, weighted MER, TBAR deadlines, and minimum pension calculations.
+          <p style={{ fontSize: 13, color: 'rgba(15,30,60,0.6)', maxWidth: 420, margin: '0 auto 24px', lineHeight: 1.7 }}>
+            Search and select from 70+ ASX ETFs. Get instant overlap detection with specific fix recommendations, weighted portfolio MER, TBAR deadline tracking, and minimum pension calculations.
           </p>
           <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '11px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
             Upgrade — from $60/quarter →
@@ -245,48 +223,90 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
   }
 
   return (
-    <div style={{ maxWidth: 1060 }}>
+    <div style={{ maxWidth: 1080 }}>
 
-      {/* Overlap alerts */}
+      {/* ── OVERLAP ALERTS ────────────────────────────────────────────── */}
       {overlaps.length > 0 && (
-        <div style={{ background: '#FFFBEB', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-          <div style={{ fontWeight: 600, color: '#78350F', fontSize: 14, marginBottom: 8 }}>
-            ⚠ {overlaps.length} ETF overlap{overlaps.length > 1 ? 's' : ''} detected
-          </div>
-          {overlaps.map(o => (
-            <div key={o.pair} style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6, marginBottom: 2 }}>
-              · <strong style={{ fontFamily: 'monospace' }}>{o.pair.replace('+', ' + ')}</strong> — {o.reason}
+        <div style={{ marginBottom: 20 }}>
+          {overlaps.map(({ pair, info }) => (
+            <div key={pair} style={{ background: info.severity === 'high' ? '#FEF2F2' : '#FFFBEB', border: `1px solid ${info.severity === 'high' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.25)'}`, borderRadius: 12, padding: '14px 18px', marginBottom: 10, display: 'flex', gap: 14 }}>
+              <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: info.severity === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                {info.severity === 'high' ? '⚠' : '~'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#0F1E3C' }}>{pair.replace('+', ' + ')}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: info.severity === 'high' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.15)', color: info.severity === 'high' ? '#991B1B' : '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {info.severity === 'high' ? 'High overlap' : 'Moderate overlap'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: info.severity === 'high' ? '#7F1D1D' : '#78350F', lineHeight: 1.6, marginBottom: 6 }}>{info.reason}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, background: 'rgba(15,30,60,0.04)', borderRadius: 8, padding: '8px 12px' }}>
+                  <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>💡</span>
+                  <div style={{ fontSize: 12, color: '#0F1E3C', lineHeight: 1.6, fontWeight: 500 }}><strong>Suggested action:</strong> {info.action}</div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20, marginBottom: 20 }}>
+      {/* ── PORTFOLIO COMPLETENESS PROMPT ────────────────────────────── */}
+      {holdings.length === 0 ? (
+        <div style={{ background: 'rgba(0,212,170,0.06)', border: '2px dashed rgba(0,212,170,0.3)', borderRadius: 16, padding: '28px 32px', marginBottom: 20, textAlign: 'center' }}>
+          <div style={{ fontSize: 28, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#0F1E3C', marginBottom: 8 }}>Add all your SMSF ETF holdings to get started</div>
+          <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.6)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
+            Enter every ETF and its current dollar value — including smaller or legacy positions. The overlap detector and portfolio analysis only work accurately when your holdings are complete. Your data is saved privately to your account.
+          </div>
+        </div>
+      ) : total === 0 ? (
+        <div style={{ background: '#FFFBEB', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 18px', marginBottom: 16, fontSize: 13, color: '#78350F', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span>⚠</span>
+          <span>You've added {holdings.length} ETF{holdings.length > 1 ? 's' : ''} but haven't entered any dollar values yet. Enter the current market value of each holding to see allocation percentages and portfolio stats.</span>
+        </div>
+      ) : total < 50000 ? (
+        <div style={{ background: 'rgba(83,74,183,0.06)', border: '1px solid rgba(83,74,183,0.15)', borderRadius: 12, padding: '12px 18px', marginBottom: 16, fontSize: 13, color: '#3C3489', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span>💡</span>
+          <span>Make sure you've added <strong>all</strong> your SMSF holdings — including cash, term deposits, and any other ETFs. Incomplete holdings will skew the allocation percentages and overlap analysis.</span>
+        </div>
+      ) : null}
 
-        {/* ── LEFT: Holdings table + search ──────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={c}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(15,30,60,0.4)' }}>
-                SMSF holdings {holdings.length > 0 && <span style={{ color: '#0F1E3C' }}>({holdings.length} ETFs)</span>}
+      {/* ── MAIN GRID: 3-column layout ───────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+
+        {/* ── HOLDINGS (spans 2 cols) ──────────────────────────────────── */}
+        <div style={{ gridColumn: '1 / 3', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={cls}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0F1E3C' }}>
+                  SMSF holdings
+                  {holdings.length > 0 && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: 'rgba(15,30,60,0.5)' }}>{holdings.length} ETF{holdings.length > 1 ? 's' : ''} · {fmt(total)} total</span>}
+                </div>
+                {weightedMer !== null && total > 0 && (
+                  <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', marginTop: 3 }}>
+                    Weighted MER: <strong style={{ color: '#534AB7' }}>{weightedMer.toFixed(2)}%</strong> = <strong style={{ color: '#534AB7' }}>{fmt(total * weightedMer / 100)}/yr</strong> in total ETF fees
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {saveMsg && <span style={{ fontSize: 12, color: '#00D4AA', fontWeight: 600 }}>{saveMsg}</span>}
                 <button onClick={saveHoldings} disabled={saving || holdings.length === 0}
-                  style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 8, border: 'none', background: '#0F1E3C', color: '#00D4AA', cursor: 'pointer', opacity: holdings.length === 0 ? 0.4 : 1 }}>
-                  {saving ? 'Saving…' : 'Save'}
+                  style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: holdings.length === 0 ? 'rgba(15,30,60,0.1)' : '#0F1E3C', color: holdings.length === 0 ? 'rgba(15,30,60,0.4)' : '#00D4AA', fontWeight: 700, fontSize: 13, cursor: holdings.length === 0 ? 'not-allowed' : 'pointer' }}>
+                  {saving ? 'Saving…' : '💾 Save holdings'}
                 </button>
               </div>
             </div>
 
-            {/* Holdings table */}
+            {/* Table */}
             {holdings.length > 0 && (
-              <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+              <div style={{ overflowX: 'auto', marginBottom: 18 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
-                      {['Ticker','Fund name','Issuer','Asset class','MER','1yr','3yr','5yr','Value ($)','Alloc %',''].map(h => (
-                        <th key={h} style={{ padding: '5px 8px', fontSize: 10, fontWeight: 600, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', textAlign: h === 'Value ($)' || h === 'Alloc %' ? 'right' : 'left' }}>{h}</th>
+                      {['Ticker','Fund name','Issuer','Asset class','MER','1yr','3yr','5yr','Value ($)','Alloc',''].map((h, i) => (
+                        <th key={i} style={{ padding: '5px 8px', fontSize: 10, fontWeight: 600, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', textAlign: i >= 4 && i <= 9 ? 'right' : 'left' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -296,37 +316,40 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                       const hasOverlap = overlapTickers.has(h.ticker)
                       const etf = h.etfData
                       return (
-                        <tr key={h.ticker} style={{ borderBottom: '1px solid rgba(15,30,60,0.05)', background: hasOverlap ? 'rgba(245,158,11,0.04)' : 'transparent' }}>
+                        <tr key={h.ticker} style={{ borderBottom: '1px solid rgba(15,30,60,0.05)', background: hasOverlap ? 'rgba(239,68,68,0.03)' : 'transparent' }}>
                           <td style={{ padding: '9px 8px', whiteSpace: 'nowrap' }}>
                             <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F1E3C', fontSize: 13 }}>{h.ticker}</span>
-                            {hasOverlap && <span style={{ marginLeft: 4, fontSize: 8, background: '#FEF3C7', color: '#92400E', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>OVERLAP</span>}
+                            {hasOverlap && <span style={{ marginLeft: 4, fontSize: 8, background: '#FEF2F2', color: '#991B1B', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>OVERLAP</span>}
                             {etf?.esg && <span style={{ marginLeft: 3, fontSize: 8, background: 'rgba(0,212,170,0.12)', color: '#065F46', padding: '1px 4px', borderRadius: 3, fontWeight: 700 }}>ESG</span>}
                           </td>
-                          <td style={{ padding: '9px 8px', color: '#0F1E3C', fontSize: 11, maxWidth: 160 }}>
-                            {etf ? (etf.name.length > 36 ? etf.name.slice(0, 36) + '…' : etf.name) : h.ticker}
-                          </td>
-                          <td style={{ padding: '9px 8px', fontSize: 11, color: 'rgba(15,30,60,0.55)', whiteSpace: 'nowrap' }}>{etf?.issuer ?? '—'}</td>
-                          <td style={{ padding: '9px 8px', fontSize: 11, color: 'rgba(15,30,60,0.55)', whiteSpace: 'nowrap' }}>{etf?.assetClass ?? '—'}</td>
-                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, color: '#0F1E3C', whiteSpace: 'nowrap' }}>{etf ? `${etf.mer.toFixed(2)}%` : '—'}</td>
-                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: etf?.ret1 && etf.ret1 >= 15 ? '#00D4AA' : '#0F1E3C' }}>{etf?.ret1 ? `${etf.ret1.toFixed(1)}%` : '—'}</td>
-                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: etf?.ret3 && etf.ret3 >= 10 ? '#00D4AA' : '#0F1E3C' }}>{etf?.ret3 ? `${etf.ret3.toFixed(1)}%` : '—'}</td>
-                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: etf?.ret5 && etf.ret5 >= 10 ? '#00D4AA' : '#0F1E3C' }}>{etf?.ret5 ? `${etf.ret5.toFixed(1)}%` : '—'}</td>
+                          <td style={{ padding: '9px 8px', fontSize: 11, color: '#0F1E3C' }}>{etf ? (etf.name.length > 34 ? etf.name.slice(0,34)+'…' : etf.name) : h.ticker}</td>
+                          <td style={{ padding: '9px 8px', fontSize: 11, color: 'rgba(15,30,60,0.5)', whiteSpace: 'nowrap' }}>{etf?.issuer ?? '—'}</td>
+                          <td style={{ padding: '9px 8px', fontSize: 11, color: 'rgba(15,30,60,0.5)', whiteSpace: 'nowrap' }}>{etf?.assetClass ?? '—'}</td>
+                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: '#534AB7', fontWeight: 600 }}>{etf ? `${etf.mer.toFixed(2)}%` : '—'}</td>
+                          {[etf?.ret1, etf?.ret3, etf?.ret5].map((r, i) => (
+                            <td key={i} style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: r ? (r >= 15 ? '#00D4AA' : r >= 8 ? '#0F1E3C' : '#D97706') : 'rgba(15,30,60,0.25)' }}>{r ? `${r.toFixed(1)}%` : '—'}</td>
+                          ))}
                           <td style={{ padding: '9px 8px', textAlign: 'right' }}>
                             <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                               <span style={{ position: 'absolute', left: 7, fontSize: 11, color: 'rgba(15,30,60,0.4)', pointerEvents: 'none' }}>$</span>
                               <input type="number" value={h.value || ''} onChange={e => updateValue(idx, +e.target.value)}
                                 placeholder="0"
-                                style={{ width: 100, padding: '4px 6px 4px 18px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 7, fontFamily: 'monospace', fontSize: 12, color: '#0F1E3C', outline: 'none', background: 'white', textAlign: 'right' }} />
+                                style={{ width: 100, padding: '5px 6px 5px 18px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 7, fontFamily: 'monospace', fontSize: 12, color: '#0F1E3C', outline: 'none', background: 'white', textAlign: 'right' }} />
                             </div>
                           </td>
-                          <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontSize: 11, textAlign: 'right', color: 'rgba(15,30,60,0.55)' }}>{pct.toFixed(0)}%</td>
-                          <td style={{ padding: '9px 4px', textAlign: 'center' }}>
+                          <td style={{ padding: '9px 8px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                              <div style={{ width: 36, height: 4, background: 'rgba(15,30,60,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                                <div style={{ width: `${pct}%`, height: '100%', background: '#534AB7', borderRadius: 2 }} />
+                              </div>
+                              <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(15,30,60,0.55)', minWidth: 28 }}>{pct.toFixed(0)}%</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '9px 4px' }}>
                             <button onClick={() => removeHolding(idx)}
-                              style={{ background: 'none', border: 'none', color: 'rgba(15,30,60,0.25)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 4px' }}
+                              style={{ background: 'none', border: 'none', color: 'rgba(15,30,60,0.2)', cursor: 'pointer', fontSize: 17, padding: '0 4px' }}
                               onMouseEnter={e => ((e.target as HTMLElement).style.color = '#EF4444')}
-                              onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(15,30,60,0.25)')}>
-                              ×
-                            </button>
+                              onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(15,30,60,0.2)')}>×</button>
                           </td>
                         </tr>
                       )
@@ -334,17 +357,9 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                   </tbody>
                   <tfoot>
                     <tr style={{ borderTop: '2px solid rgba(15,30,60,0.1)' }}>
-                      <td colSpan={8} style={{ padding: '9px 8px', fontWeight: 600, color: '#0F1E3C', fontSize: 12 }}>
-                        Total
-                        {weightedMer !== null && (
-                          <span style={{ marginLeft: 12, fontWeight: 400, color: 'rgba(15,30,60,0.5)' }}>
-                            Weighted MER: <strong style={{ color: '#534AB7' }}>{weightedMer.toFixed(2)}%</strong>
-                            <span style={{ marginLeft: 6 }}>= {fmt(total * weightedMer / 100)}/yr in fees</span>
-                          </span>
-                        )}
-                      </td>
+                      <td colSpan={8} style={{ padding: '9px 8px', fontWeight: 600, color: '#0F1E3C', fontSize: 12 }}>Total portfolio</td>
                       <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontWeight: 700, color: '#0F1E3C', textAlign: 'right', fontSize: 13 }}>{fmt(total)}</td>
-                      <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontWeight: 600, textAlign: 'right', fontSize: 12 }}>100%</td>
+                      <td style={{ padding: '9px 8px', fontFamily: 'monospace', fontWeight: 600, textAlign: 'right', fontSize: 11 }}>100%</td>
                       <td />
                     </tr>
                   </tfoot>
@@ -352,74 +367,82 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
               </div>
             )}
 
-            {/* ETF Search */}
-            <div style={{ borderTop: holdings.length > 0 ? '1px solid rgba(15,30,60,0.08)' : 'none', paddingTop: holdings.length > 0 ? 14 : 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 8 }}>
-                {holdings.length === 0 ? 'Search and add your ETF holdings' : 'Add another ETF'}
+            {/* Search */}
+            <div style={{ borderTop: holdings.length > 0 ? '1px solid rgba(15,30,60,0.08)' : 'none', paddingTop: holdings.length > 0 ? 16 : 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#0F1E3C', marginBottom: 8 }}>
+                {holdings.length === 0 ? '🔍 Search and add your ETF holdings below' : '+ Add another ETF to your portfolio'}
               </div>
-              <ETFSearch onSelect={addEtf} />
+              <ETFSearch onSelect={addEtf} alreadyAdded={allAdded} />
               <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 6 }}>
-                70+ ASX ETFs · Filter by category · Returns to 30 Jun 2025
+                70+ ASX ETFs across all major issuers · Filter by category · Returns to 30 Jun 2025 (net of fees)
               </div>
             </div>
           </div>
 
-          {/* Allocation chart */}
-          {allocationByClass.length > 0 && (
-            <div style={c}>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>Asset allocation</div>
-              {allocationByClass.map(({ cls, val, pct }, idx) => {
-                const colours = ['#534AB7','#00D4AA','#F59E0B','#EF4444','#06B6D4','#8B5CF6','#EC4899','#10B981','#F97316','#64748B']
-                return (
-                  <div key={cls} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: colours[idx % colours.length], flexShrink: 0 }} />
-                    <div style={{ fontSize: 12, color: '#0F1E3C', width: 160, flexShrink: 0 }}>{cls}</div>
-                    <div style={{ flex: 1, height: 6, background: 'rgba(15,30,60,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: colours[idx % colours.length], borderRadius: 3 }} />
-                    </div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(15,30,60,0.55)', width: 34, textAlign: 'right' }}>{pct.toFixed(0)}%</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#0F1E3C', width: 76, textAlign: 'right' }}>{fmt(val)}</div>
+          {/* Asset allocation */}
+          {allocationByClass.length > 0 && total > 0 && (
+            <div style={cls}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0F1E3C', marginBottom: 16 }}>Asset allocation breakdown</div>
+              {allocationByClass.map(({ cls: c, val, pct }, i) => (
+                <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: PALETTE[i % PALETTE.length], flexShrink: 0 }} />
+                  <div style={{ fontSize: 12, color: '#0F1E3C', width: 180, flexShrink: 0 }}>{c}</div>
+                  <div style={{ flex: 1, height: 7, background: 'rgba(15,30,60,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', background: PALETTE[i % PALETTE.length], borderRadius: 3 }} />
                   </div>
-                )
-              })}
+                  <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'rgba(15,30,60,0.55)', width: 36, textAlign: 'right' }}>{pct.toFixed(0)}%</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#0F1E3C', width: 80, textAlign: 'right' }}>{fmt(val)}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* ── RIGHT: Calculators ─────────────────────────────────────────── */}
+        {/* ── RIGHT COLUMN ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Min pension */}
-          <div style={c}>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>
-              Minimum pension drawdown
+          {/* Min pension — redesigned with clear explanation */}
+          <div style={cls}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>Minimum pension you must draw</div>
+            <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', lineHeight: 1.6, marginBottom: 16 }}>
+              The ATO requires SMSF pension accounts to pay out a minimum amount each financial year. If you don't draw this amount, your pension account loses its tax-exempt status.
             </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginBottom: 5 }}>Member age</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>Your age</div>
                 <input type="number" value={memberAge} onChange={e => setMemberAge(+e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 8, fontSize: 13, fontFamily: 'monospace', color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '9px 11px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 9, fontSize: 13, fontFamily: 'monospace', color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginBottom: 5 }}>Pension balance</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>Pension account balance</div>
                 <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'rgba(15,30,60,0.4)' }}>$</span>
-                  <input type="number" value={pensionBalance} onChange={e => setPensionBalance(+e.target.value)}
-                    style={{ width: '100%', padding: '8px 8px 8px 20px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 8, fontSize: 13, fontFamily: 'monospace', color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' }} />
+                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'rgba(15,30,60,0.4)' }}>$</span>
+                  <input type="number" value={pensionBal} onChange={e => setPensionBal(+e.target.value)}
+                    style={{ width: '100%', padding: '9px 9px 9px 20px', border: '1px solid rgba(15,30,60,0.15)', borderRadius: 9, fontSize: 13, fontFamily: 'monospace', color: '#0F1E3C', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               </div>
             </div>
-            <div style={{ background: '#0F1E3C', borderRadius: 12, padding: '14px 16px', marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>Min rate — age {memberAge}</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#00D4AA' }}>{minPensionRate}%</span>
+
+            {/* Result — clear output */}
+            <div style={{ background: '#0F1E3C', borderRadius: 14, padding: '18px 20px', marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>You must draw at least this much in 2025–26</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 36, fontWeight: 700, color: '#00D4AA', lineHeight: 1 }}>{fmt(minPension)}</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>this financial year</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 8 }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>Min draw this year</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#00D4AA' }}>{fmt(minPension)}</span>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+                Based on {minRate}% rate for age {memberAge} · {fmt(pensionBal)} pension balance<br />
+                Approximately {fmt(minPension / 12)}/month or {fmt(minPension / 26)}/fortnight
+              </div>
+              <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(239,68,68,0.15)', borderRadius: 8, fontSize: 11, color: '#FCA5A5', lineHeight: 1.5 }}>
+                ⚠ Not drawing the minimum means your pension account's 0% tax on earnings reverts to 15% — costing you significantly more each year.
               </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+
+            {/* Age bracket table */}
+            <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>ATO minimum rates by age</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(15,30,60,0.08)' }}>
                   {['Age','Rate','On your balance'].map(h => (
@@ -428,55 +451,47 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
                 </tr>
               </thead>
               <tbody>
-                {[[55,4],[65,5],[75,6],[80,7],[85,9],[90,11],[95,14]].map(([age, rate]) => (
-                  <tr key={age} style={{ borderBottom: '1px solid rgba(15,30,60,0.04)', background: minPensionRate === rate ? 'rgba(0,212,170,0.06)' : 'transparent' }}>
-                    <td style={{ padding: '6px 6px', color: '#0F1E3C', fontWeight: minPensionRate === rate ? 600 : 400 }}>
-                      {age === 55 ? 'Under 65' : age === 65 ? '65–74' : age === 75 ? '75–79' : age === 80 ? '80–84' : age === 85 ? '85–89' : age === 90 ? '90–94' : '95+'}
-                    </td>
-                    <td style={{ padding: '6px 6px', fontFamily: 'monospace', textAlign: 'right', color: minPensionRate === rate ? '#00D4AA' : 'rgba(15,30,60,0.5)', fontWeight: minPensionRate === rate ? 700 : 400 }}>{rate}%</td>
-                    <td style={{ padding: '6px 6px', fontFamily: 'monospace', textAlign: 'right', color: minPensionRate === rate ? '#0F1E3C' : 'rgba(15,30,60,0.4)', fontWeight: minPensionRate === rate ? 600 : 400 }}>{fmt(pensionBalance * (rate as number) / 100)}</td>
+                {[['Under 65',4],['65–74',5],['75–79',6],['80–84',7],['85–89',9],['90–94',11],['95+',14]].map(([label, rate]) => (
+                  <tr key={label as string} style={{ borderBottom: '1px solid rgba(15,30,60,0.04)', background: minRate === rate ? 'rgba(0,212,170,0.07)' : 'transparent' }}>
+                    <td style={{ padding: '7px 6px', color: '#0F1E3C', fontWeight: minRate === rate ? 700 : 400, fontSize: 12 }}>{minRate === rate ? `▶ ${label}` : label as string}</td>
+                    <td style={{ padding: '7px 6px', fontFamily: 'monospace', textAlign: 'right', color: minRate === rate ? '#00D4AA' : 'rgba(15,30,60,0.5)', fontWeight: minRate === rate ? 700 : 400, fontSize: 12 }}>{rate as number}%</td>
+                    <td style={{ padding: '7px 6px', fontFamily: 'monospace', textAlign: 'right', color: minRate === rate ? '#0F1E3C' : 'rgba(15,30,60,0.4)', fontWeight: minRate === rate ? 600 : 400, fontSize: 12 }}>{fmt(pensionBal * (rate as number) / 100)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* TBAR */}
-          <div style={c}>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(15,30,60,0.4)', marginBottom: 10 }}>TBAR deadlines</div>
-            <p style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6, marginBottom: 12 }}>
-              Transfer Balance Account Reports due within 28 days of each quarter end.
-            </p>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid rgba(15,30,60,0.08)' }}>
-                  {['Quarter end','Due date','Status'].map(h => (
-                    <th key={h} style={{ padding: '5px 6px', textAlign: h==='Status'?'right':'left', fontSize: 10, fontWeight: 500, color: 'rgba(15,30,60,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tbarDeadlines.map(r => (
-                  <tr key={r.qtrEnd} style={{ borderBottom: '1px solid rgba(15,30,60,0.04)' }}>
-                    <td style={{ padding: '8px 6px', color: '#0F1E3C' }}>{r.qtrEnd}</td>
-                    <td style={{ padding: '8px 6px', fontFamily: 'monospace', fontSize: 11, color: r.status==='overdue'?'#DC2626':r.status==='due-soon'?'#D97706':'rgba(15,30,60,0.55)', fontWeight: r.status!=='upcoming'?600:400 }}>{r.due}</td>
-                    <td style={{ padding: '8px 6px', textAlign: 'right' }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20,
-                        background: r.status==='overdue'?'#FEF2F2':r.status==='due-soon'?'#FEF3C7':'rgba(15,30,60,0.06)',
-                        color: r.status==='overdue'?'#991B1B':r.status==='due-soon'?'#92400E':'rgba(15,30,60,0.45)' }}>
-                        {r.status==='overdue'?'⚠ Overdue':r.status==='due-soon'?`${r.days}d left`:'Upcoming'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* TBAR — redesigned */}
+          <div style={cls}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>TBAR deadline tracker</div>
+            <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', lineHeight: 1.6, marginBottom: 16 }}>
+              When your SMSF pension balance changes (contributions, lump sum withdrawals, commutations), you must lodge a Transfer Balance Account Report with the ATO within <strong>28 days</strong> of the quarter end. Late lodgement attracts penalties.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {tbarDeadlines.map(r => (
+                <div key={r.qtrEnd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 11, border: `1px solid ${r.status==='overdue'?'rgba(239,68,68,0.25)':r.status==='due-soon'?'rgba(245,158,11,0.25)':'rgba(15,30,60,0.08)'}`, background: r.status==='overdue'?'#FEF2F2':r.status==='due-soon'?'#FFFBEB':'rgba(15,30,60,0.02)' }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#0F1E3C', marginBottom: 2 }}>Quarter ending {r.qtrEnd}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)' }}>TBAR due by {r.due}</div>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, flexShrink: 0,
+                    background: r.status==='overdue'?'rgba(239,68,68,0.12)':r.status==='due-soon'?'rgba(245,158,11,0.15)':'rgba(15,30,60,0.06)',
+                    color: r.status==='overdue'?'#991B1B':r.status==='due-soon'?'#92400E':'rgba(15,30,60,0.45)' }}>
+                    {r.status==='overdue'?'⚠ Overdue':r.status==='due-soon'?`⏰ Due in ${r.days}d`:'✓ Upcoming'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 14, fontSize: 11, color: 'rgba(15,30,60,0.4)', lineHeight: 1.6, background: 'rgba(15,30,60,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              💡 You only need to lodge a TBAR if a reportable event occurred in that quarter (e.g. a new pension started, pension commuted, or excess transfer balance event). No event = no lodgement required.
+            </div>
           </div>
         </div>
       </div>
 
       <div style={{ background: 'rgba(15,30,60,0.04)', border: '1px solid rgba(15,30,60,0.08)', borderRadius: 12, padding: '12px 16px', fontSize: 11, color: 'rgba(15,30,60,0.5)', lineHeight: 1.6 }}>
-        <strong style={{ color: 'rgba(15,30,60,0.65)' }}>General information only.</strong> ETF data (MER, returns) from fund issuer websites at June 2026 — returns to 30 Jun 2025, net of fees. Overlap analysis is based on publicly known index compositions and is indicative. TBAR deadlines are indicative — verify with your SMSF administrator. Minimum pension rates per ATO guidelines at June 2026. This tool does not replace a qualified SMSF auditor, accountant, or licensed financial adviser.
+        <strong style={{ color: 'rgba(15,30,60,0.65)' }}>General information only.</strong> ETF data (MER, returns) from issuer websites at June 2026. Returns to 30 Jun 2025, net of fees. Overlap analysis is based on publicly known index compositions and is indicative — actual portfolio overlap depends on exact fund composition at the time of holding. TBAR deadlines and minimum pension rates are per ATO guidelines at June 2026 — verify with your SMSF administrator or accountant. This tool does not replace a qualified SMSF auditor, accountant, or licensed financial adviser.
       </div>
     </div>
   )
