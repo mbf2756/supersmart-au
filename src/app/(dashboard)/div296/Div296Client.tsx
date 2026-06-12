@@ -36,8 +36,15 @@ export function Div296Client({ superProfile: sp }: { superProfile: any }) {
 
   // Find year of first exposure
   const firstExposureYear = projection.find(r => r.aboveThreshold > 0)
-  const retirementYear    = Math.max(0, 65 - age)
-  const balanceAt65       = projection.find(r => r.year === retirementYear)?.balance ?? balance
+  const yearsToRetirement = Math.max(0, 65 - age)
+  const retirementYear    = yearsToRetirement  // alias for table highlighting
+  // If already 65+, balance at 65 is current balance (already there)
+  // Otherwise find the projection row matching years to retirement
+  const balanceAt65 = yearsToRetirement === 0
+    ? balance
+    : projection.find(r => r.year === yearsToRetirement)?.balance
+      ?? projection[projection.length - 1]?.balance   // fallback to last projected year
+      ?? balance
 
   // Total tax over 10 years from now (if applicable in future)
   const tenYearTax = projection.slice(0, 10).reduce((s, r) => s + r.taxEstimate, 0)
@@ -290,10 +297,10 @@ export function Div296Client({ superProfile: sp }: { superProfile: any }) {
             </thead>
             <tbody>
               {projection
-                .filter((r, i) => showFullTable ? true : (i < 5 || r.year % 5 === 0 || (firstExposureYear && Math.abs(r.year - firstExposureYear.year) <= 2) || r.year === retirementYear))
+                .filter((r, i) => showFullTable ? true : (i < 5 || r.year % 5 === 0 || (firstExposureYear && Math.abs(r.year - firstExposureYear.year) <= 2) || (yearsToRetirement > 0 && r.year === retirementYear)))
                 .slice(0, showFullTable ? 35 : 14)
                 .map(r => {
-                  const isRetirement = r.year === retirementYear
+                  const isRetirement = yearsToRetirement > 0 && r.year === retirementYear
                   const isExposed    = r.aboveThreshold > 0
                   const isFirstYear  = firstExposureYear && r.year === firstExposureYear.year
                   return (
