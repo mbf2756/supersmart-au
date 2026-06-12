@@ -403,9 +403,15 @@ export function SmsfClient({ holdings: initial, subscription }: { holdings: any[
 
           {/* Min pension — redesigned with clear explanation */}
           <div style={cls}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>Minimum pension you must draw</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>Minimum pension drawdown</div>
+
+            {/* Pension vs accumulation explainer */}
+            <div style={{ background: 'rgba(83,74,183,0.06)', border: '1px solid rgba(83,74,183,0.15)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#3C3489', lineHeight: 1.7 }}>
+              <strong>Pension phase only.</strong> This rule applies when your SMSF has started a pension (retirement income stream). During the <strong>accumulation phase</strong> (still working and contributing), there is no minimum drawdown requirement — you cannot access your super at all until you meet a condition of release. If your SMSF is in accumulation phase, you can ignore this section entirely.
+            </div>
+
             <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', lineHeight: 1.6, marginBottom: 16 }}>
-              The ATO requires SMSF pension accounts to pay out a minimum amount each financial year. If you don't draw this amount, your pension account loses its tax-exempt status.
+              Once a pension has started, the ATO requires you to draw a minimum percentage of your account balance each financial year. Failing to meet the minimum means your pension account <strong>loses its tax-free status</strong> on investment earnings — reverting from 0% to 15% tax. The required percentage increases with age.
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
@@ -436,7 +442,7 @@ export function SmsfClient({ holdings: initial, subscription }: { holdings: any[
                 Approximately {fmt(minPension / 12)}/month or {fmt(minPension / 26)}/fortnight
               </div>
               <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(239,68,68,0.15)', borderRadius: 8, fontSize: 11, color: '#FCA5A5', lineHeight: 1.5 }}>
-                ⚠ Not drawing the minimum means your pension account's 0% tax on earnings reverts to 15% — costing you significantly more each year.
+                ⚠ Pension phase only: if you don't draw the minimum, the ATO can treat your pension as having failed — investment earnings for that year are taxed at 15% instead of 0%, and you may need to re-start the pension.
               </div>
             </div>
 
