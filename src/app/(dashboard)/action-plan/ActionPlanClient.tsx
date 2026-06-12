@@ -19,52 +19,94 @@ function OpportunityCard({ opp, rank }: { opp: Opportunity; rank: number }) {
   const [open, setOpen] = useState(false)
   const pc = PRIORITY_COLORS[opp.priority]
   const cc = CONFIDENCE_LABELS[opp.confidence]
+  const hasTimeUrgency = opp.timeToAct?.includes('⚠') || opp.timeToAct?.includes('Before 30 June')
   return (
-    <div style={{ background: 'white', borderRadius: 16, border: `1px solid ${pc.border}`, overflow: 'hidden', marginBottom: 14 }}>
-      {/* Header */}
+    <div style={{ background: 'white', borderRadius: 16, border: `1px solid ${hasTimeUrgency ? 'rgba(239,68,68,0.2)' : pc.border}`, overflow: 'hidden', marginBottom: 14 }}>
+      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '18px 20px', cursor: 'pointer' }}
         onClick={() => setOpen(!open)}>
-        {/* Rank badge */}
+        {/* Rank */}
         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#0F1E3C', color: '#00D4AA',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace',
           fontSize: 16, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{rank}</div>
-        {/* Icon */}
         <div style={{ fontSize: 24, flexShrink: 0 }}>{opp.icon}</div>
-        {/* Content */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#0F1E3C', lineHeight: 1.3 }}>{opp.title}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#00D4AA', lineHeight: 1 }}>
-                {opp.impactType === 'retirement' ? fmtShort(opp.impact) : fmt(opp.impact)}
+                {opp.impactType === 'retirement' ? fmtShort(opp.impact) : opp.impact > 0 ? fmt(opp.impact) : '—'}
               </div>
-              <div style={{ fontSize: 11, color: '8A9BB5', marginTop: 2 }}>{opp.impactLabel.replace(/^\$[\d,]+/, '')}</div>
+              <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.45)', marginTop: 2 }}>
+                {opp.impactLabel.replace(/^\$[\d,.kM]+\s*/, '').replace(/^(extra at retirement|tax saved\/year|one-off|\/year)/, '').trim() || opp.impactType}
+              </div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: 'rgba(15,30,60,0.6)', marginBottom: 8 }}>{opp.subtitle}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-              background: pc.bg, color: pc.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              background: pc.bg, color: pc.text, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
               {pc.label}
             </span>
             <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
               background: 'rgba(15,30,60,0.05)', color: cc.color }}>
               {cc.label}
             </span>
-            <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)' }}>{open ? '▲ Less' : '▼ More detail'}</span>
+            {opp.timeToAct && (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
+                background: hasTimeUrgency ? '#FEF2F2' : 'rgba(15,30,60,0.04)',
+                color: hasTimeUrgency ? '#991B1B' : 'rgba(15,30,60,0.5)' }}>
+                {opp.timeToAct}
+              </span>
+            )}
+            <span style={{ fontSize: 11, color: 'rgba(15,30,60,0.35)', marginLeft: 'auto' as const }}>
+              {open ? '▲ Less' : '▼ More detail'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Expanded detail */}
+      {/* Expanded */}
       {open && (
-        <div style={{ borderTop: '1px solid rgba(15,30,60,0.07)', padding: '14px 20px 18px', background: 'rgba(15,30,60,0.02)' }}>
-          <p style={{ fontSize: 13, color: 'rgba(15,30,60,0.7)', lineHeight: 1.7, marginBottom: 12 }}>{opp.explanation}</p>
-          <a href={opp.actionUrl}
-            style={{ display: 'inline-block', background: '#0F1E3C', color: '#00D4AA', padding: '8px 18px',
-              borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 13 }}>
-            {opp.actionLabel}
-          </a>
+        <div style={{ borderTop: '1px solid rgba(15,30,60,0.07)', background: 'rgba(15,30,60,0.015)' }}>
+          {/* Explanation */}
+          <div style={{ padding: '16px 20px 0' }}>
+            <p style={{ fontSize: 13, color: 'rgba(15,30,60,0.7)', lineHeight: 1.7, margin: 0 }}>{opp.explanation}</p>
+          </div>
+          {/* Why now */}
+          {(opp as any).whyNow && (
+            <div style={{ margin: '12px 20px 0', background: hasTimeUrgency ? '#FEF2F2' : 'rgba(15,30,60,0.04)', borderRadius: 10, padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: hasTimeUrgency ? '#991B1B' : '#0F1E3C', textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginBottom: 4 }}>
+                {hasTimeUrgency ? '⚠ Why act now' : '💡 Why this matters now'}
+              </div>
+              <p style={{ fontSize: 12, color: hasTimeUrgency ? '#7F1D1D' : 'rgba(15,30,60,0.65)', lineHeight: 1.6, margin: 0 }}>{(opp as any).whyNow}</p>
+            </div>
+          )}
+          {/* Steps */}
+          {(opp as any).steps?.length > 0 && (
+            <div style={{ margin: '12px 20px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0F1E3C', textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginBottom: 8 }}>
+                How to action this
+              </div>
+              {(opp as any).steps.map((step: string, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0F1E3C', color: '#00D4AA',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                    {i + 1}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'rgba(15,30,60,0.7)', lineHeight: 1.6, margin: 0 }}>{step}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* CTA */}
+          <div style={{ padding: '14px 20px 18px' }}>
+            <a href={opp.actionUrl}
+              style={{ display: 'inline-block', background: '#0F1E3C', color: '#00D4AA', padding: '9px 20px',
+                borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 13 }}>
+              {opp.actionLabel}
+            </a>
+          </div>
         </div>
       )}
     </div>
