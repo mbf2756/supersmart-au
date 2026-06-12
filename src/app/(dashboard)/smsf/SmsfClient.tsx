@@ -40,7 +40,7 @@ export function SmsfClient({ holdings: initialHoldings, subscription }: { holdin
             ETF overlap detection, TBAR deadline tracking, and minimum pension calculations. Available on the Optimiser plan.
           </p>
           <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '10px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
-            Upgrade — from $149/year
+            Upgrade — from $60/quarter
           </a>
         </div>
       </div>
