@@ -13,9 +13,9 @@ export default async function SmsfPage() {
     supabase.from('subscriptions').select('plan,add_ons').eq('user_id', user!.id).single(),
   ])
   return <>
-    <DashboardTopbar title="SMSF analytics" subtitle="ETF overlap detection, TBAR deadlines, and minimum pension tracking" />
+    <DashboardTopbar title="SMSF ETF portfolio" subtitle="Holdings tracker · overlap detection · TBAR deadlines · pension drawdown" />
     <div className="p-8">
-      <ProfileGate superProfile={superProfile} pageName="SMSF analytics" pageIcon="🏦">
+      <ProfileGate superProfile={superProfile} pageName="SMSF ETF portfolio" pageIcon="🏦">
         <SmsfClient holdings={holdings ?? []} subscription={subscription} />
       </ProfileGate>
     </div>
