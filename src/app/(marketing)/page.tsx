@@ -26,50 +26,50 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Nav */}
-      <nav style={{ background: 'white', borderBottom: '1px solid rgba(15,30,60,0.1)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#00D4AA', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>AU · SUPER</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#0F1E3C', lineHeight: 1 }}>SmartSuper AU</div>
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link href="/pricing" style={{ fontSize: 14, color: 'rgba(15,30,60,0.65)', textDecoration: 'none', padding: '8px 12px', fontWeight: 500 }}>Pricing</Link>
-          <Link href="/contact" style={{ fontSize: 14, color: 'rgba(15,30,60,0.65)', textDecoration: 'none', padding: '8px 12px', fontWeight: 500 }}>Contact</Link>
-          <Link href="/login" style={{ fontSize: 14, color: '#0F1E3C', textDecoration: 'none', padding: '9px 18px', borderRadius: 10, fontWeight: 600, border: '1.5px solid rgba(15,30,60,0.2)', background: 'white', marginLeft: 4 }}>Sign in</Link>
-          <Link href="/signup" style={{ fontSize: 14, color: 'white', textDecoration: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 700, background: '#0F1E3C', marginLeft: 4 }}>
-            Get started free →
+      <nav className="bg-white border-b border-black/8 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div>
+          <div className="font-mono text-[10px] text-teal tracking-widest uppercase">AU · SUPER</div>
+          <div className="text-base font-semibold text-navy leading-none">SmartSuper</div>
+        </div>
+        <div className="flex items-center gap-6">
+          <Link href="/pricing" className="text-sm text-navy/60 hover:text-navy transition-colors">Pricing</Link>
+          <Link href="/contact" className="text-sm text-navy/60 hover:text-navy transition-colors">Contact</Link>
+          <Link href="/login" className="text-sm text-navy/60 hover:text-navy transition-colors">Sign in</Link>
+          <Link href="/signup" className="px-4 py-2 bg-navy text-white text-sm font-medium rounded-xl hover:bg-navy-mid transition-colors">
+            Get started free
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="py-16 sm:py-24 px-6 sm:px-8 text-center max-w-4xl mx-auto">
+      <section className="py-24 px-8 text-center max-w-4xl mx-auto">
         <div className="inline-block font-mono text-xs text-teal bg-teal/10 px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase">
           Independent · No fund bias · Not financial advice
         </div>
-        <h1 className="text-3xl sm:text-5xl font-semibold text-navy tracking-tight leading-tight mb-5">
+        <h1 className="text-5xl font-semibold text-navy tracking-tight leading-tight mb-5">
           Your super is your largest asset.<br />
           <span className="text-teal">Are you getting the most from it?</span>
         </h1>
         <p className="text-xl text-navy/60 mb-10 max-w-2xl mx-auto leading-relaxed">
           SmartSuper AU is Australia's only independent super optimisation platform. Free health score, carry-forward tracker, fee analyser, and Division 296 modeller — no fund bias, no commissions.
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <Link href="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#00D4AA', color: '#0F1E3C', fontWeight: 800, fontSize: 16, borderRadius: 12, textDecoration: 'none', boxShadow: '0 4px 20px rgba(0,212,170,0.4)', letterSpacing: '-0.01em' }}>
-            Get my free super score →
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/signup" className="px-8 py-3.5 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-colors text-base">
+            Get my free super score
           </Link>
-          <Link href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#0F1E3C', color: 'white', fontWeight: 600, fontSize: 16, borderRadius: 12, textDecoration: 'none' }}>
-            See pricing options
+          <Link href="/pricing" className="px-8 py-3.5 border border-black/10 text-navy font-medium rounded-xl hover:bg-white transition-colors text-base">
+            See pricing
           </Link>
         </div>
       </section>
 
       {/* Stats */}
-      <section style={{ background: "#0F1E3C", padding: "56px 32px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "32px 24px" }} className="sm:grid-cols-4-custom">
+      <section className="bg-navy py-14 px-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-4 gap-8">
           {STATS.map(s => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "monospace", fontSize: 30, fontWeight: 600, color: "#00D4AA", marginBottom: 4 }}>{s.value}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>{s.label}</div>
+            <div key={s.label} className="text-center">
+              <div className="font-mono text-3xl font-medium text-teal mb-1">{s.value}</div>
+              <div className="text-sm text-white/50">{s.label}</div>
             </div>
           ))}
         </div>
@@ -93,7 +93,7 @@ export default function HomePage() {
       <section className="py-16 px-8 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold text-navy text-center mb-12 tracking-tight">Everything you need in one place</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             {FEATURES.map(f => (
               <div key={f.title} className="p-6 bg-surface rounded-2xl">
                 <div className="w-10 h-10 bg-navy/5 rounded-xl flex items-center justify-center text-xl mb-4">{f.icon}</div>
@@ -110,10 +110,9 @@ export default function HomePage() {
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-semibold text-navy mb-4 tracking-tight">Start with your free super score</h2>
           <p className="text-navy/60 mb-8">Takes 2 minutes. No credit card required.</p>
-          <Link href="/signup" style={{ display: 'inline-block', padding: '16px 40px', background: '#00D4AA', color: '#0F1E3C', fontWeight: 800, fontSize: 17, borderRadius: 14, textDecoration: 'none', boxShadow: '0 6px 24px rgba(0,212,170,0.35)', letterSpacing: '-0.01em' }}>
-            Get my free super score →
+          <Link href="/signup" className="inline-block px-10 py-4 bg-teal text-navy font-semibold rounded-xl hover:bg-teal-dim transition-colors text-base">
+            Get my free score →
           </Link>
-          <p style={{ marginTop: 14, fontSize: 13, color: 'rgba(15,30,60,0.45)' }}>Takes 2 minutes · No credit card required</p>
         </div>
       </section>
 
