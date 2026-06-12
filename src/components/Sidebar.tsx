@@ -13,7 +13,7 @@ const NAV = [
   { group: 'Subscriber tools', items: [
     { href: '/action-plan',       label: 'Action plan',           icon: '⚡',  paid: true, badge: 'NEW' },
     { href: '/retirement-score',  label: 'Retirement readiness',  icon: '🎯',  paid: true },
-    { href: '/simulator',         label: 'What-if simulator',     icon: '🔮',  paid: true },
+    { href: '/simulator',         label: 'Advanced modelling',    icon: '🔮',  paid: true },
     { href: '/funds',             label: 'Fund intelligence',     icon: '🧠',  paid: true },
     { href: '/salary',            label: 'Salary sacrifice',      icon: '⇄',   paid: true },
     { href: '/div296',            label: 'Div 296 exposure',      icon: '⚠',   paid: true, badge: '!' },
