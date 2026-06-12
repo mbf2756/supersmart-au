@@ -369,46 +369,15 @@ export function FeesClient({ superProfile: sp }: { superProfile: any }) {
             </div>
           </div>
 
-          {/* Fee types explained */}
-          <div style={{ background: 'white', border: '1px solid rgba(15,30,60,0.1)', borderRadius: 14, padding: '18px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 14 }}>The 4 types of super fees</div>
-            {[
-              { name: 'Investment fee', type: '%', desc: 'The main variable fee — charged as a % of your balance for managing your investment option. This is what varies between options and is shown above.' },
-              { name: 'Administration fee', type: '$', desc: 'Fixed dollar amount (typically $78–104/yr) for running the fund. Usually the same regardless of which option you\'re in.' },
-              { name: 'Transaction costs', type: '%', desc: 'Small % costs for buying and selling assets within the option. Usually 0.01–0.10%. Shown in your fund\'s Fees & Costs Guide.' },
-              { name: 'Insurance fees', type: '$', desc: 'Death, TPD, and income protection cover. Often bundled in. Check your annual statement — these can be $200–800+/yr and are separate from investment fees.' },
-            ].map(f => (
-              <div key={f.name} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(15,30,60,0.06)' }}>
-                <span style={{ width: 24, height: 24, borderRadius: 6, background: f.type === '%' ? '#EDE9FE' : 'rgba(15,30,60,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: f.type === '%' ? '#3C3489' : '#0F1E3C', flexShrink: 0 }}>{f.type}</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#0F1E3C', marginBottom: 2 }}>{f.name}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.6)', lineHeight: 1.5 }}>{f.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* What to do next */}
+          {/* Compact CTA */}
           {!isAlreadyLowFee && result.drag > 10000 && (
-            <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#00D4AA', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                What you can do right now
+            <div style={{ background: '#0F1E3C', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'white', marginBottom: 4 }}>See every like-for-like alternative</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>Fund comparison shows 40+ options sorted by total cost at your balance — with verified 1yr, 3yr, 5yr returns.</div>
               </div>
-              {[
-                { step: '1', text: `Ask your fund: "Do you have an indexed option?" — many funds offer indexed options at 0.05–0.15% within the same fund. Switching investment option is instant and free.` },
-                { step: '2', text: `Compare on the Fund Comparison page — see like-for-like alternatives with actual return and fee data specific to your option type.` },
-                { step: '3', text: `Check MyGov → ATO → Super for lost accounts — old accounts accumulate fees with no contributions going in.` },
-                { step: '4', text: `Before switching funds: check for exit fees, whether you'll lose insurance cover, and seek financial advice if unsure.` },
-              ].map(item => (
-                <div key={item.step} style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#00D4AA', flexShrink: 0, marginTop: 1 }}>
-                    {item.step}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{item.text}</div>
-                </div>
-              ))}
-              <a href="/pricing" style={{ display: 'inline-block', marginTop: 6, background: '#00D4AA', color: '#0F1E3C', padding: '8px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
-                Unlock fund comparison →
+              <a href="/pricing" style={{ flexShrink: 0, background: '#00D4AA', color: '#0F1E3C', padding: '10px 18px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>
+                Unlock comparison →
               </a>
             </div>
           )}
