@@ -281,7 +281,7 @@ export function SimulatorClient({ superProfile: sp, subscription }: {
 
   // ── View mode ───────────────────────────────────────────────────────────
   type ViewMode = 'retirement-age' | 'investment' | 'combined' | 'custom'
-  const [viewMode, setViewMode] = useState<ViewMode>('retirement-age')
+  const [viewMode, setViewMode] = useState<ViewMode>('custom')
 
   // ── Custom simulator state ───────────────────────────────────────────
   const [customRetireAge,  setCustomRetireAge]  = useState(defaultRetire)
@@ -445,10 +445,10 @@ export function SimulatorClient({ superProfile: sp, subscription }: {
 
       {/* Mode tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {tabBtn('custom', '🔧 Custom build')}
         {tabBtn('retirement-age', '🕐 Retirement age')}
         {tabBtn('investment', '📊 Investment option')}
         {tabBtn('combined', '⭐ Combined scenarios')}
-        {tabBtn('custom', '🔧 Custom build')}
       </div>
 
       {/* ── RETIREMENT AGE TAB ──────────────────────────────────────────── */}
