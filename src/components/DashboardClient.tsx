@@ -277,21 +277,6 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
   return (
     <div style={{ maxWidth: 960 }}>
 
-      {/* ── URGENT ALERT ─────────────────────────────────────────── */}
-      {balance < 500000 && (
-        <div style={{ background: '#FEF2F2', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 14, padding: '14px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>⚠</span>
-          <div>
-            <div style={{ fontWeight: 600, color: '#7F1D1D', fontSize: 14, marginBottom: 3 }}>Your 2020–21 carry-forward cap expires 30 June 2026</div>
-            <div style={{ fontSize: 13, color: '#991B1B', lineHeight: 1.6 }}>
-              Up to $27,500 in unused concessional cap will be permanently lost if not used before EOFY.
-              That's a potential tax saving of <strong>${Math.round(27500 * 0.325).toLocaleString()}</strong> at the 32.5% marginal rate.
-              {' '}<span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => router.push('/contributions')}>See Contributions →</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── TOP STATS ROW ─────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
 
@@ -418,6 +403,24 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
         </div>
       </div>
 
+      {/* ── CARRY-FORWARD ALERT (mid-page, after score) ────────────── */}
+      {balance < 500000 && (
+        <div style={{ background: '#FEF2F2', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 14, padding: '14px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⚠</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, color: '#7F1D1D', fontSize: 14, marginBottom: 3 }}>Your 2020–21 carry-forward cap expires 30 June 2026</div>
+            <div style={{ fontSize: 13, color: '#991B1B', lineHeight: 1.6 }}>
+              Up to $27,500 in unused concessional cap will be permanently lost if not used before EOFY.
+              That's a potential tax saving of <strong>${Math.round(27500 * 0.325).toLocaleString()}</strong> at the 32.5% marginal rate.
+            </div>
+          </div>
+          <button onClick={() => router.push('/contributions')}
+            style={{ background: '#7F1D1D', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+            Check now →
+          </button>
+        </div>
+      )}
+
       {/* ── PROJECTION CHART ──────────────────────────────────────── */}
       <div style={{ background: 'white', borderRadius: 16, padding: '22px 24px', border: '1px solid rgba(15,30,60,0.1)', marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -472,6 +475,63 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
           </div>
         )}
       </div>
+
+      {/* ── PREMIUM LOCKED FEATURES ───────────────────────────────── */}
+      {!isPaid && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)' }}>
+              Premium insights — unlock — see pricing
+            </div>
+            <div style={{ flex: 1, height: 1, background: 'rgba(15,30,60,0.08)' }} />
+            <button onClick={() => router.push('/pricing')}
+              style={{ background: '#00D4AA', color: '#0F1E3C', padding: '7px 16px', borderRadius: 20, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              Unlock all →
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
+            <LockedCard
+              title="Salary sacrifice optimiser"
+              teaser="Max tax saving before 30 June"
+              icon="💼"
+              href="/contributions"
+            />
+            <LockedCard
+              title="Division 296 modeller"
+              teaser="Your exposure above $3M threshold"
+              icon="📊"
+              href="/div296"
+            />
+            <LockedCard
+              title="Spouse contribution strategy"
+              teaser="Tax offset + balance equalisation"
+              icon="👫"
+              href="/spouse"
+            />
+          </div>
+
+          {/* Upgrade CTA banner */}
+          <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '24px 28px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'white', marginBottom: 6 }}>
+                You're leaving money on the table
+              </div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: 520 }}>
+                SmartSuper AU Optimiser unlocks salary sacrifice modelling, carry-forward tracker, Division 296 tax calculator, spouse contribution strategy, SMSF analytics, and cap expiry alerts.
+                {feeDrag?.drag > 0 && ` Based on your profile, there's a potential ${fmt(feeDrag.drag)} improvement opportunity over ${yrs} years.`}
+                {' '}For $149/yr — less than your fund charges you every {Math.max(1, Math.round(200 / (annualFeeDollars || 200)))} weeks in fees.
+              </div>
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <button onClick={() => router.push('/pricing')}
+                style={{ background: '#00D4AA', color: '#0F1E3C', padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                See pricing options →
+              </button>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 6 }}>Cancel anytime</div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── INSIGHTS ROW ─────────────────────────────────────────── */}
       <div style={{ marginBottom: 12 }}>
@@ -533,68 +593,10 @@ export function DashboardClient({ superProfile, profileIsEmpty, subscription }: 
         </div>
       </div>
 
-      {/* ── PREMIUM LOCKED FEATURES ───────────────────────────────── */}
-      {!isPaid && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)' }}>
-              Premium insights — unlock — see pricing
-            </div>
-            <div style={{ flex: 1, height: 1, background: 'rgba(15,30,60,0.08)' }} />
-            <button onClick={() => router.push('/pricing')}
-              style={{ background: '#00D4AA', color: '#0F1E3C', padding: '7px 16px', borderRadius: 20, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-              Unlock all →
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
-            <LockedCard
-              title="Salary sacrifice optimiser"
-              teaser="Max tax saving before 30 June"
-              icon="💼"
-              href="/contributions"
-            />
-            <LockedCard
-              title="Division 296 modeller"
-              teaser="Your exposure above $3M threshold"
-              icon="📊"
-              href="/div296"
-            />
-            <LockedCard
-              title="Spouse contribution strategy"
-              teaser="Tax offset + balance equalisation"
-              icon="👫"
-              href="/spouse"
-            />
-          </div>
-
-          {/* Upgrade CTA banner */}
-          <div style={{ background: '#0F1E3C', borderRadius: 16, padding: '24px 28px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: 'white', marginBottom: 6 }}>
-                You're leaving money on the table
-              </div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: 520 }}>
-                SmartSuper AU Optimiser unlocks salary sacrifice modelling, carry-forward tracker, Division 296 tax calculator, spouse contribution strategy, SMSF analytics, and cap expiry alerts.
-                {feeDrag?.drag > 0 && ` Based on your profile, there's a potential ${fmt(feeDrag.drag)} improvement opportunity over ${yrs} years.`}
-                {' '}For $149/yr — less than your fund charges you every {Math.max(1, Math.round(200 / (annualFeeDollars || 200)))} weeks in fees.
-              </div>
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <button onClick={() => router.push('/pricing')}
-                style={{ background: '#00D4AA', color: '#0F1E3C', padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                See pricing options →
-              </button>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 6 }}>Cancel anytime</div>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* ── QUICK ACTIONS ─────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
         {[
           { label: 'Fee analyser', sub: 'See your fee drag', href: '/fees', icon: '💸' },
-          { label: 'Fund comparison', sub: 'Like-for-like peers', href: '/funds', icon: '🏆' },
           { label: 'Contributions', sub: 'Carry-forward tracker', href: '/contributions', icon: '📅' },
           { label: 'Edit profile', sub: 'Update your details', href: '/settings', icon: '⚙️' },
         ].map(a => (
