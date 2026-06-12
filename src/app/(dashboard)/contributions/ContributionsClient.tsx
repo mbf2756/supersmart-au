@@ -115,7 +115,7 @@ export function ContributionsClient({ superProfile: sp, subscription }: { superP
               <div style={{ fontSize: 20, marginBottom: 8 }}>🔒</div>
               <div style={{ fontWeight: 500, color: '#0F1E3C', marginBottom: 4 }}>Carry-Forward Tracker</div>
               <div style={{ marginBottom: 12 }}>Available on the Optimiser plan</div>
-              <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '8px 18px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>Upgrade — from $149/year</a>
+              <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '8px 18px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>Upgrade — from $60/quarter</a>
             </div>
           ) : (
             <>
