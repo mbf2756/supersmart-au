@@ -16,7 +16,7 @@ const NAV = [
     { href: '/salary',        label: 'Salary sacrifice',   icon: '⇄',   paid: true },
     { href: '/div296',        label: 'Div 296 exposure',   icon: '⚠',   paid: true, badge: '!' },
     { href: '/spouse',        label: 'Spouse analysis',    icon: '◑',   paid: true },
-    { href: '/smsf',          label: 'SMSF analytics',     icon: '◈',   paid: true },
+    { href: '/smsf',          label: 'SMSF ETF portfolio',     icon: '◈',   paid: true },
   ]},
 ]
 
