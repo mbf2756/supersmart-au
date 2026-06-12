@@ -111,11 +111,36 @@ export function ContributionsClient({ superProfile: sp, subscription }: { superP
             </div>
           </div>
           {!isPaid ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(15,30,60,0.4)', fontSize: 13 }}>
-              <div style={{ fontSize: 20, marginBottom: 8 }}>🔒</div>
-              <div style={{ fontWeight: 500, color: '#0F1E3C', marginBottom: 4 }}>Carry-Forward Tracker</div>
-              <div style={{ marginBottom: 12 }}>Available on the Optimiser plan</div>
-              <a href="/pricing" style={{ background: '#00D4AA', color: '#0F1E3C', padding: '8px 18px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>Upgrade — from $60/quarter</a>
+            <div style={{ background: 'rgba(15,30,60,0.03)', borderRadius: 12, padding: '20px', textAlign: 'center' as const }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 12 }}>Your estimated carry-forward</div>
+              {/* Blurred preview */}
+              <div style={{ position: 'relative' as const, marginBottom: 16 }}>
+                <div style={{ filter: 'blur(6px)', pointerEvents: 'none' as const, userSelect: 'none' as const }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                    {['2020-21', '2021-22', '2022-23'].map(y => (
+                      <div key={y} style={{ background: 'white', borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginBottom: 2 }}>{y}</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 600, color: '#D97706' }}>$27,500</div>
+                        <div style={{ fontSize: 10, color: '#991B1B', marginTop: 2 }}>Expires Jun 26</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ background: '#0F1E3C', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#00D4AA', fontWeight: 600 }}>
+                    Total available: up to $137,500
+                  </div>
+                </div>
+                <div style={{ position: 'absolute' as const, inset: 0, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                  <div style={{ background: 'white', borderRadius: 12, padding: '14px 20px', textAlign: 'center' as const, boxShadow: '0 4px 20px rgba(15,30,60,0.12)' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0F1E3C', marginBottom: 6 }}>🔒 Unlock your exact carry-forward</div>
+                    <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.55)', marginBottom: 10, lineHeight: 1.5 }}>
+                      See your unused cap from 2020–26, tax saving potential, and whether you can still act before 30 June.
+                    </div>
+                    <a href="/pricing" style={{ display: 'inline-block', background: '#0F1E3C', color: '#00D4AA', padding: '9px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 13 }}>
+                      Subscribe — from $60/quarter →
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <>
