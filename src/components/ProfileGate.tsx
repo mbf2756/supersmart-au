@@ -8,11 +8,10 @@ interface Props {
   pageIcon?: string   // emoji
 }
 
-// A profile is "ready" only when profile_locked = true
-// (meaning the user has completed and saved their first real profile entry)
+// A profile is "ready" when the user has filled in their core fields
 function isProfileReady(sp: any): boolean {
   if (!sp) return false
-  return sp.profile_locked === true
+  return !!(sp.fund_name && sp.current_balance > 0 && sp.age > 0)
 }
 
 export function ProfileGate({ superProfile, children, pageName, pageIcon }: Props) {
@@ -82,7 +81,7 @@ export function ProfileGate({ superProfile, children, pageName, pageIcon }: Prop
           </button>
 
           <p style={{ marginTop: 14, fontSize: 12, color: 'rgba(15,30,60,0.35)' }}>
-            Takes 2 minutes · Your data is locked to your account after first save
+            Takes 2 minutes · All calculations are personalised to your details
           </p>
         </div>
 
