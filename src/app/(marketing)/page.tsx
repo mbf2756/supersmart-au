@@ -58,7 +58,7 @@ export default function HomePage() {
             Get my free super score →
           </Link>
           <Link href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#0F1E3C', color: 'white', fontWeight: 600, fontSize: 16, borderRadius: 12, textDecoration: 'none' }}>
-            See pricing <span style={{ opacity: 0.6, fontSize: 14 }}>$149/yr</span>
+            See pricing options
           </Link>
         </div>
       </section>
