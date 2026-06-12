@@ -272,11 +272,11 @@ export function SmsfClient({ holdings: initial, subscription }: { holdings: any[
         </div>
       ) : null}
 
-      {/* ── MAIN GRID: 3-column layout ───────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+      {/* ── FULL WIDTH VERTICAL STACK ───────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 20 }}>
 
-        {/* ── HOLDINGS (spans 2 cols) ──────────────────────────────────── */}
-        <div style={{ gridColumn: '1 / 3', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* ── HOLDINGS ─────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={cls}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <div>
@@ -398,8 +398,8 @@ export function SmsfClient({ holdings: initial, subscription }: { holdings: any[
           )}
         </div>
 
-        {/* ── RIGHT COLUMN ─────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* ── PENSION + TBAR: full width, side by side ─────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
           {/* Min pension — redesigned with clear explanation */}
           <div style={cls}>
