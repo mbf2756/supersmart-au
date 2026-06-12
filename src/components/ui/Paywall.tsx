@@ -14,7 +14,7 @@ export function Paywall({ feature, requiredPlan = 'optimiser' }: {
         This feature is included in the {requiredPlan === 'optimiser' ? 'Optimiser' : 'Retirement Planner'} plan.
       </p>
       <Button variant="teal" onClick={() => router.push('/pricing')}>
-        Upgrade — from $149/year
+        Upgrade — from $60/quarter
       </Button>
     </div>
   )
