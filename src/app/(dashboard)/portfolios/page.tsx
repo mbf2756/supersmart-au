@@ -16,11 +16,11 @@ export default async function PortfoliosPage() {
 
   return <>
     <DashboardTopbar
-      title="Model portfolios"
+      title="Model ETF portfolios"
       subtitle="ETF model portfolios for ChoicePlus, Member Direct, and SMSF — with fee and overlap analysis"
     />
     <div className="p-8">
-      <ProfileGate superProfile={superProfile} pageName="Model portfolios" pageIcon="📈">
+      <ProfileGate superProfile={superProfile} pageName="Model ETF portfolios" pageIcon="📈">
         <PortfoliosClient superProfile={superProfile} subscription={subscription} />
       </ProfileGate>
     </div>
