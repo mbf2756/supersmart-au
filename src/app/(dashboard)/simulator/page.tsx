@@ -4,7 +4,7 @@ import { ProfileGate } from '@/components/ProfileGate'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'What-If Simulator' }
+export const metadata: Metadata = { title: 'Advanced Modelling' }
 
 export default async function SimulatorPage() {
   const supabase = await createClient()
@@ -17,8 +17,8 @@ export default async function SimulatorPage() {
   return (
     <>
       <DashboardTopbar
-        title="What-if simulator"
-        subtitle="Test retirement scenarios in real time — see the impact of every decision"
+        title="Advanced modelling"
+        subtitle="Compare retirement ages, investment options, and strategies side by side"
       />
       <div className="p-8">
         <ProfileGate superProfile={superProfile} pageName="What-if simulator" pageIcon="⚡">
