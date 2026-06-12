@@ -228,7 +228,8 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
     making_voluntary_contribs: sp?.making_voluntary_contribs ?? false,
     carry_forward_balance: sp?.carry_forward_balance ?? null,
     personal_contribs_ytd: sp?.personal_contribs_ytd ?? 0,
-
+    spouse_income: sp?.spouse_income ?? null,
+    spouse_balance: sp?.spouse_balance ?? null,
   })
 
   function set(key: string, value: unknown) {
@@ -580,19 +581,75 @@ export function SettingsClient({ superProfile: sp, subscription }: { superProfil
           </div>
         </div>
 
-        {/* Spouse upsell */}
-        <div style={{ marginTop: 20, background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)', borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#0F1E3C', marginBottom: 4 }}>👫 Does your spouse have super?</div>
-            <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.65)', lineHeight: 1.6 }}>
-              Each person's super is unique — different fund, different fees, different health score.
-              Create a separate account for your spouse to get their own personalised analysis, health score, and contribution strategy.
+        {/* Spouse / partner details */}
+        <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(15,30,60,0.08)' }}>
+          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(15,30,60,0.4)', marginBottom: 6 }}>
+            Spouse / partner details <span style={{ fontSize: 10, color: 'rgba(15,30,60,0.35)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional, used by spouse analysis and action plan</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)', marginBottom: 14, lineHeight: 1.6 }}>
+            Adding your spouse's details improves the accuracy of the spouse contribution strategy, balance equalisation modelling, and Division 296 exposure calculations.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <div style={labelStyle}>
+                Spouse annual income
+                <Hint>Your spouse or partner's total annual income (salary + other). Used to determine eligibility for the spouse contribution tax offset (available when spouse income is under $40,000).</Hint>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={prefix}>$</span>
+                <input
+                  type="number"
+                  value={form.spouse_income ?? ''}
+                  onChange={e => set('spouse_income', e.target.value === '' ? null : +e.target.value)}
+                  placeholder="e.g. 45000"
+                  style={{ ...monoInput, paddingLeft: 28 }}
+                />
+              </div>
+              {form.spouse_income !== null && form.spouse_income < 37000 && (
+                <div style={{ fontSize: 11, color: '#065F46', marginTop: 4 }}>
+                  ✓ Eligible for spouse contribution tax offset (up to $540)
+                </div>
+              )}
+              {form.spouse_income !== null && form.spouse_income >= 37000 && form.spouse_income < 40000 && (
+                <div style={{ fontSize: 11, color: '#D97706', marginTop: 4 }}>
+                  ~ Partial spouse offset available (income between $37k–$40k)
+                </div>
+              )}
+              {form.spouse_income !== null && form.spouse_income >= 40000 && (
+                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.4)', marginTop: 4 }}>
+                  Spouse offset not available above $40,000
+                </div>
+              )}
+            </div>
+            <div>
+              <div style={labelStyle}>
+                Spouse super balance
+                <Hint>Your spouse's total super balance across all their accounts. Used to calculate the balance gap for contribution splitting and Division 296 combined exposure. Find it in their fund's member portal or MyGov → ATO → Super.</Hint>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={prefix}>$</span>
+                <input
+                  type="number"
+                  value={form.spouse_balance ?? ''}
+                  onChange={e => set('spouse_balance', e.target.value === '' ? null : +e.target.value)}
+                  placeholder="e.g. 180000"
+                  style={{ ...monoInput, paddingLeft: 28 }}
+                />
+              </div>
+              {form.spouse_balance !== null && form.current_balance > 0 && (
+                <div style={{ fontSize: 11, color: 'rgba(15,30,60,0.5)', marginTop: 4 }}>
+                  Balance gap: ${Math.abs(form.current_balance - form.spouse_balance).toLocaleString()}
+                  {Math.abs(form.current_balance - form.spouse_balance) > 100000 && (
+                    <span style={{ color: '#D97706' }}> — consider contribution splitting</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-          <a href="/signup"
-            style={{ flexShrink: 0, background: '#0F1E3C', color: '#00D4AA', padding: '9px 18px', borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Create spouse account →
-          </a>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'rgba(15,30,60,0.45)', lineHeight: 1.6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span>💡</span>
+            <span>For a full personalised super analysis for your spouse (their own health score, fee analysis, and fund comparison), <a href="/signup" style={{ color: '#534AB7', fontWeight: 500 }}>create them a separate free account</a>.</span>
+          </div>
         </div>
 
         {error && (
