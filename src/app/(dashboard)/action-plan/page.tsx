@@ -4,7 +4,7 @@ import { ProfileGate } from '@/components/ProfileGate'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Annual Action Plan' }
+export const metadata: Metadata = { title: 'Annual Super Action Plan' }
 
 export default async function ActionPlanPage() {
   const supabase = await createClient()
@@ -19,7 +19,7 @@ export default async function ActionPlanPage() {
   return (
     <>
       <DashboardTopbar
-        title="Annual action plan"
+        title="Annual super action plan"
         subtitle="Your top opportunities — personalised, ranked by dollar impact"
       />
       <div className="p-8">
