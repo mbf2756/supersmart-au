@@ -36,7 +36,7 @@ export function DashboardTopbar({ title, subtitle }: Props) {
       <div className="flex items-center gap-2">
 
         {/* SmartETF switcher */}
-        <a href="https://smartetf.com.au"
+        <a href="https://www.smartetfau.com/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
