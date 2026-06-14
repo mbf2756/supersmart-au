@@ -64,7 +64,7 @@ export default function HomePage() {
 
           {/* Score preview card */}
           <div style={{ background: 'white', borderRadius: 24, padding: '28px', boxShadow: '0 20px 60px rgba(15,30,60,0.1)', border: '1px solid rgba(15,30,60,0.06)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 18 }}>Super health score · Example</div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(15,30,60,0.4)', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 18 }}>Super health score · Example (50yr old, $185k balance)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
               <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
                 <svg viewBox="0 0 80 80" style={{ width: 72, height: 72 }}>
@@ -78,7 +78,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0F1E3C', marginBottom: 3 }}>Good — room to improve</div>
-                <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)', lineHeight: 1.5 }}>3 opportunities found<br />Est. <strong style={{ color: '#00A888' }}>$84,000</strong> extra at retirement</div>
+                <div style={{ fontSize: 12, color: 'rgba(15,30,60,0.5)', lineHeight: 1.5 }}>3 opportunities found<br />Est. <strong style={{ color: '#00A888' }}>$67,000</strong> extra at retirement</div>
               </div>
             </div>
             {[
@@ -102,7 +102,7 @@ export default function HomePage() {
             <div style={{ marginTop: 18, padding: '10px 12px', background: '#FEF2F2', borderRadius: 9, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 12 }}>💡</span>
               <div style={{ fontSize: 11, color: '#7F1D1D', lineHeight: 1.5 }}>
-                Switching to an indexed option saves <strong>$2,754/yr</strong> in fees — worth <strong>$84,000</strong> over 20 years.
+                Switching to an indexed option saves <strong>$980/yr</strong> in fees — worth <strong>$67,000</strong> over 20 years.
               </div>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function HomePage() {
             { value: '$4.5T', label: 'Super assets in Australia', sub: 'Most members never check their fees' },
             { value: '61%', label: 'Uncertain about retirement', sub: 'Even with $200k+ in super' },
             { value: '$4,668', label: 'Median advice fee 2025', sub: 'SmartSuper AU from $60/quarter' },
-            { value: '0.62%', label: 'Average active fund fee', sub: 'Indexed alternatives start at 0.04%' },
+            { value: '0.57%', label: 'Average MySuper default fee', sub: 'Indexed alternatives start at 0.04%' },
           ].map((s, i) => (
             <div key={s.value} style={{ textAlign: 'center', padding: '8px 16px', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
               <div style={{ fontFamily: 'monospace', fontSize: 30, fontWeight: 700, color: '#00D4AA', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 6 }}>{s.value}</div>
@@ -131,12 +131,12 @@ export default function HomePage() {
       <section style={{ maxWidth: 700, margin: '0 auto', padding: '80px 40px', textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#00A888', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 16 }}>The problem</div>
         <h2 style={{ fontSize: 34, fontWeight: 800, color: '#0F1E3C', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 20 }}>
-          Your fund charges 0.78%.<br />
+          The average MySuper default charges 0.57%.<br />
           The cheapest equivalent charges 0.04%.<br />
-          <span style={{ color: 'rgba(15,30,60,0.3)', fontWeight: 400, fontSize: 28 }}>Most people never know the difference.</span>
+          <span style={{ color: 'rgba(15,30,60,0.3)', fontWeight: 400, fontSize: 28 }}>Most members never notice the difference.</span>
         </h2>
         <p style={{ fontSize: 16, color: 'rgba(15,30,60,0.6)', lineHeight: 1.75 }}>
-          On a $430,000 balance, that 0.74% gap costs <strong style={{ color: '#0F1E3C' }}>$3,182 every year</strong> — silently. Over 20 years it compounds to <strong style={{ color: '#EF4444' }}>$87,000 less at retirement</strong>. Financial advisers know this. Now you do too.
+          On the average 50-year-old's balance of $185,000, that 0.53% gap costs <strong style={{ color: '#0F1E3C' }}>$980 every year</strong> — silently. Over 20 years it compounds to <strong style={{ color: '#EF4444' }}>$67,000 less at retirement</strong>. Financial advisers know this. Now you do too.<br /><br /><span style={{ fontSize: 13, color: 'rgba(15,30,60,0.4)' }}>Source: Median ATO super balance age 50–54. Fees: AustralianSuper Balanced MySuper default (0.57%) vs Hostplus Indexed Shares (0.04%) — verified from fund PDSs, June 2026. Projection assumes 7% p.a. gross return.</span>
         </p>
       </section>
 
