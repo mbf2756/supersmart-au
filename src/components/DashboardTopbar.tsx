@@ -35,6 +35,24 @@ export function DashboardTopbar({ title, subtitle }: Props) {
       {/* Actions */}
       <div className="flex items-center gap-2">
 
+        {/* SmartETF switcher */}
+        <a href="https://smartetf.com.au"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
+          style={{ background: '#0F1E3C', color: '#00D4AA', border: '1.5px solid #0F1E3C' }}>
+          <svg width="12" height="12" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
+            <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+            <rect x="7" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+            <rect x="1" y="7" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+            <rect x="7" y="7" width="5" height="5" rx="1" stroke="#00D4AA" strokeWidth="1.3" fill="rgba(0,212,170,0.15)"/>
+          </svg>
+          Switch to SmartETF
+        </a>
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 22, background: 'rgba(15,30,60,0.1)' }} />
+
         {/* Edit profile */}
         <Link href="/settings"
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-black/5"
@@ -70,9 +88,6 @@ export function DashboardTopbar({ title, subtitle }: Props) {
             Upgrade →
           </Link>
         )}
-
-        {/* Divider */}
-        <div style={{ width: 1, height: 22, background: 'rgba(15,30,60,0.1)', marginLeft: 2 }} />
 
         {/* Sign out — red-tinted */}
         <button onClick={signOut}
