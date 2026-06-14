@@ -11,8 +11,8 @@ const NAV = [
     { href: '/contributions',     label: 'Contributions',         icon: '↑',   paid: false, badge: '3' },
   ]},
   { group: 'Subscriber tools', items: [
-    { href: '/action-plan',       label: 'Action plan',           icon: '⚡',  paid: true, badge: 'NEW' },
-    { href: '/retirement-score',  label: 'Retirement readiness',  icon: '🎯',  paid: true },
+    { href: '/action-plan',       label: 'Action plan report',    icon: '⚡',  paid: true, badge: 'NEW' },
+    { href: '/retirement-score',  label: 'Retirement report',     icon: '🎯',  paid: true },
     { href: '/simulator',         label: 'Advanced modelling',    icon: '🔮',  paid: true },
     { href: '/funds',             label: 'Fund intelligence',     icon: '🧠',  paid: true },
     { href: '/salary',            label: 'Salary sacrifice',      icon: '⇄',   paid: true },
