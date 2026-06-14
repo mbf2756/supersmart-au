@@ -11,7 +11,7 @@ const NAV = [
     { href: '/contributions',     label: 'Contributions',         icon: '↑',   paid: false, badge: '3' },
   ]},
   { group: 'Subscriber tools', items: [
-    { href: '/action-plan',       label: 'Action plan report',    icon: '⚡',  paid: true, badge: 'NEW' },
+    { href: '/action-plan',       label: 'Annual super action plan',    icon: '⚡',  paid: true, badge: 'NEW' },
     { href: '/retirement-score',  label: 'Retirement report',     icon: '🎯',  paid: true },
     { href: '/simulator',         label: 'Advanced modelling',    icon: '🔮',  paid: true },
     { href: '/funds',             label: 'Fund intelligence',     icon: '🧠',  paid: true },
@@ -125,45 +125,6 @@ export function Sidebar({ subscription }: { subscription: Subscription | null })
 
         {/* Action buttons — solid, clearly tappable */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-
-          {/* Edit profile */}
-          <Link href="/settings"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 12px', borderRadius: 10, textDecoration: 'none',
-              fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)',
-              background: pathname === '/settings' ? 'rgba(0,212,170,0.12)' : 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-            onMouseLeave={e => (e.currentTarget.style.background = pathname === '/settings' ? 'rgba(0,212,170,0.12)' : 'rgba(255,255,255,0.06)')}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
-              <path d="M9.5 1.5a1.414 1.414 0 0 1 2 2L4 11H1.5V8.5L9.5 1.5z"
-                stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Edit profile
-          </Link>
-
-          {/* Contact support */}
-          <Link href="/contact"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 12px', borderRadius: 10, textDecoration: 'none',
-              fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)',
-              background: pathname === '/contact' ? 'rgba(0,212,170,0.12)' : 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-            onMouseLeave={e => (e.currentTarget.style.background = pathname === '/contact' ? 'rgba(0,212,170,0.12)' : 'rgba(255,255,255,0.06)')}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
-              <path d="M1.5 2.5h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z"
-                stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M1.5 3.5l5 3.5 5-3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Contact support
-          </Link>
 
           {/* Sign out — red-tinted, clearly destructive */}
           <button onClick={signOut}
